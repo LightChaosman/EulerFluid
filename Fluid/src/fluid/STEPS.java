@@ -29,9 +29,10 @@ public class STEPS {
         assert x.length >= 2;
         int N = x.length - 2;
         double a = dt * diff * N * N;
-        for (int k = 0; k < 20; k++) {
-            for (int i = 1; i <= N; i++) {
+        for (int k = 0; k < 50; k++) {
+            for (int i = N; i >= 1; i--) {
                 for (int j = 1; j <= N; j++) {
+                    if(so.ocs[i][j]!=so.E)continue;//Cells that are occupied don't need to diffuse -> this is probably faster than maintaining free cells and only iterating over those
                     x[i][j] = (x0[i][j] + a * (x[i - 1][j] + x[i + 1][j]
                             + x[i][j - 1] + x[i][j + 1])) / (1 + 4 * a);
                 }

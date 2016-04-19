@@ -30,7 +30,7 @@ import rigids.forces.MouseSpring;
  */
 public class GUI extends javax.swing.JFrame {
 
-    private final static String guide = ""
+    private final static String GUIDE = ""
             + "Controls:\n"
             + "Click anywhere to add 'smoke'\n"
             + "Click anywhere while holding CTRL to place solid walls\n"
@@ -75,7 +75,7 @@ public class GUI extends javax.swing.JFrame {
                     while (true) {
                         long x = System.nanoTime();
                         boolean handled = false;
-                        if (pressing & ctrl && dragging == null) {
+                        if (pressing & ctrl && dragging == null && intern!=null) {
                             s.addStaticBlock(intern.x, intern.y);
                             handled = true;
                         }
@@ -252,7 +252,7 @@ public class GUI extends javax.swing.JFrame {
             }
             drawRigidBodies(g);
             g.setColor(Color.WHITE);
-            String guide2 = guide + "\nfps: " + fps + "\nTotal mass in system: " + s.mass;
+            String guide2 = GUIDE + "\nfps: " + fps + "\nTotal mass in system: " + s.mass;
             drawString(g, guide2, 5, this.getHeight() - (g.getFontMetrics().getHeight() * (guide2.split("\n").length) + 5));
         }
 
@@ -288,12 +288,7 @@ public class GUI extends javax.swing.JFrame {
 
                     int x0 = (int) (dw * i0);
                     int y0 = (int) (dh * j0);
-                    if (s.so.ocs[i][j] != 0) {
-                        g.setColor(Color.BLUE);
-                        g.fillRect(x0, y0, dw2 + 1, dh2 + 1);
-                        g.setColor(Color.WHITE);
-                        g.drawString(s.so.ocs[i][j] + "", x0, y0 + (int) dh);
-                    } else {
+                     
                         double rho = s.rho.field[i][j];
                         double rho2 = Math.max(Math.min(1, rho), 0);
                         double rho3 = Math.max(Math.min(1, rho - 1), 0);
@@ -306,6 +301,11 @@ public class GUI extends javax.swing.JFrame {
                         Color c = new Color((int) ((rho5) * 255), (int) ((rho2 - rho4 + rho7) * 255), (int) ((rho3 - rho6 + rho8) * 255));
                         g.setColor(c);
                         g.fillRect(x0, y0, dw2 + 1, dh2 + 1);
+                    if (s.so.ocs[i][j] != 0) {
+                        g.setColor(Color.BLUE);
+                        g.drawRect(x0, y0, dw2 + 1, dh2 + 1);
+                        g.setColor(Color.WHITE);
+                        g.drawString(s.so.ocs[i][j] + "", x0, y0 + (int) dh);
                     }
 
                     j0 = j;

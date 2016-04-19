@@ -238,7 +238,7 @@ public class StaticObjectsField {
                 break;
             case (TL):
                 x[i][j] = (b == 1 || b == 2) ? -x[i - 1][j + 1] : x[i - 1][j + 1];
-                break;//TODO something clever here...altough we don't seem to come here often...
+                break;
 
             default:
                 assert false;
