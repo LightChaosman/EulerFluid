@@ -16,6 +16,7 @@ public class MouseSpring implements Force{
     public RigidBody body;
     public double x,y;//mouse location
     public double bbx, bby;//body-space locaion of grabbed point -> still needs to be transformed
+    public double k = 0.0001;
 
     @Override
     public void addForces() {
@@ -24,9 +25,16 @@ public class MouseSpring implements Force{
         double ty = body.y+bby*body.Ryx+bby*body.Ryy;
         double dx = x-tx;
         double dy = y-ty;
-        body.Fx+=dx*0.0000001;
-        body.Fy+=dy*0.0000001;
+        double Fix = dx*k;
+        double Fiy = dy*k;
+        body.Fx+=Fix;
+        body.Fy+=Fiy;
         
+        
+        double rix = tx-body.x;
+        double riy = ty-body.y;
+        body.tau+= (rix * Fiy - riy *Fix);
+        //(ri(t)− x(t))cross Fi(t)):
     }
     
     

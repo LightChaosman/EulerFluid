@@ -427,8 +427,12 @@ public class GUI extends javax.swing.JFrame {
                 int cy = (int)(this.getHeight()*r.y);
                 int dvy = (int)(this.getHeight()*r.vy);
                 int dvx = (int)(this.getWidth()*r.vx);
+                int dFy = (int)(this.getHeight()*r.Fy*100);
+                int dFx = (int)(this.getWidth()*r.Fx*100);
                 g.setColor(Color.BLUE);
                 g.drawLine(cx, cy, cx+dvx, cy+dvy);
+                g.setColor(Color.GREEN);
+                g.drawLine(cx, cy, cx+dFx, cy+dFy);
             }
 
             if (dragging != null) {

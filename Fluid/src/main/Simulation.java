@@ -49,7 +49,7 @@ public class Simulation {
         forces.add(new MouseSpring());
         for(RigidBody b:bodies.bodies)
         {
-            forces.add(new LinearDragForce(b,0.001));
+            forces.add(new QuadraticDragForce(b,0.1));
         }
     }
     
@@ -71,6 +71,7 @@ public class Simulation {
     }
 
     public void ComputeForceAndTorque(double t) {
+        rbodies.clearForces();
         for(Force f:forces)
         {
             f.addForces();

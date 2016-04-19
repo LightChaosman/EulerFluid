@@ -125,4 +125,13 @@ public class RigidBodies {
         xdot[offset + 5] = body.tau;
     }
 
+    public void clearForces() {
+        for(RigidBody r:bodies)
+        {
+            r.Fx = 0;
+            r.Fy = 0;
+            r.tau = 0;
+        }
+    }
+
 }
