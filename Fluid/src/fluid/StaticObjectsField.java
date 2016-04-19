@@ -214,30 +214,35 @@ public class StaticObjectsField {
 
     private void setBND(int i, int j, double[][] x, int b) {
         byte state = this.ocs[i][j];
+        double avg;
         switch (state) {
             case (T):
                 x[i][j] = (b == 2 ? -x[i][j + 1] : x[i][j + 1]);
                 break;
             case (TR):
-                x[i][j] = (b == 1 || b == 2) ? -x[i + 1][j + 1] : x[i + 1][j + 1];
+                avg = (x[i][j + 1]+x[i+1][j])/2d;
+                x[i][j] = (b == 1 || b == 2) ? -avg : avg;
                 break;
             case (R):
                 x[i][j] = (b == 1 ? -x[i + 1][j] : x[i + 1][j]);
                 break;
             case (BR):
-                x[i][j] = (b == 1 || b == 2) ? -x[i + 1][j - 1] : x[i + 1][j - 1];
+                avg = (x[i][j - 1]+x[i+1][j])/2d;
+                x[i][j] = (b == 1 || b == 2) ? -avg : avg;
                 break;
             case (B):
                 x[i][j] = (b == 2 ? -x[i][j - 1] : x[i][j - 1]);
                 break;
             case (BL):
-                x[i][j] = (b == 1 || b == 2) ? -x[i - 1][j - 1] : x[i - 1][j - 1];
+                 avg = (x[i][j - 1]+x[i-1][j])/2d;
+                x[i][j] = (b == 1 || b == 2) ? -avg : avg;
                 break;
             case (L):
                 x[i][j] = (b == 1 ? -x[i - 1][j] : x[i - 1][j]);
                 break;
             case (TL):
-                x[i][j] = (b == 1 || b == 2) ? -x[i - 1][j + 1] : x[i - 1][j + 1];
+                 avg = (x[i][j + 1]+x[i-1][j])/2d;
+                x[i][j] = (b == 1 || b == 2) ? -avg : avg;
                 break;
 
             default:
@@ -245,8 +250,67 @@ public class StaticObjectsField {
         }
     }
 
-    double[] semiLang(double x, double y) {
-        return new double[]{x,y};
+    double[] semiLang(int i, int j, double u, double v, double dt0) {//http://www.cse.yorku.ca/~amana/research/grid.pdf
+        
+        double x = i - dt0 * u;
+        double y = j - dt0 * v;//If the loop does not detect collision, this will be the result
+        
+        
+        
+        v = -v * dt0;
+        u = -u * dt0;//inverse the speed...
+        int X = i;
+        int Y = j;
+
+        //looking for intersections s.t. X+tu = 1/2+k, 0<=t<=1, similar for Y+tv
+        int stepX = (int) Math.signum(u);
+        int stepY = (int) Math.signum(v);
+        double tMaxX = Math.abs(1d / (2 * u));//Because we know we start at the center of a cell.. solve i+ut = i+1 or i-1 -> 
+        double tMaxY = Math.abs(1d / (2 * v));
+        double tDeltaX = 1 / Math.abs(u);
+        double tDeltaY = 1 / Math.abs(v);
+        while (X>= 1 && Y>= 1 && X<=N&&Y<=N) {
+            if (tMaxX < tMaxY) {
+                
+                if(tMaxX >1)break;
+                
+                X = X + stepX;
+                if(ocs[X][Y]!=E)
+                {
+                    x = i+tMaxX*u;
+                    y = j+tMaxX*v;
+                    break;
+                }
+                tMaxX = tMaxX + tDeltaX;
+            } else {
+                if(tMaxY >1)break;
+                
+                Y = Y + stepY;
+                if(ocs[X][Y]!=E)
+                {
+                    x = i+tMaxY*u;
+                    y = j+tMaxY*v;
+                    break;
+                }
+                tMaxY = tMaxY + tDeltaY;
+            }
+             
+        }
+
+        
+        if (x < 0.5) {
+            x = 0.5;
+        }
+        if (x > N + 0.5) {
+            x = N + 0.5;
+        }
+        if (y < 0.5) {
+            y = 0.5;
+        }
+        if (y > N + 0.5) {
+            y = N + 0.5;
+        }
+        return new double[]{x, y};
     }
 
 }

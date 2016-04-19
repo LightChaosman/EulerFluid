@@ -63,7 +63,7 @@ public class Simulation {
         u.vel_step(uInput, vInput, visc, dt,so);
         rbodies.finalToBodies();
         double s = 0;
-        for(int i = 1; i <= N; i++)for(int j = 1; j <= N;j++)s+=rho.field[i][j];
+        for(int i = 1; i <= N; i++)for(int j = 1; j <= N;j++)s+=rho.field[i][j]*(so.ocs[i][j]==so.E?1:0);
         mass = s;
     }
 

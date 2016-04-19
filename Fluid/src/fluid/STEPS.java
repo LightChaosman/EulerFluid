@@ -54,21 +54,9 @@ public class STEPS {
 
         for (i = 1; i <= N; i++) {
             for (j = 1; j <= N; j++) {
-                x = i - dt0 * u[i][j];
-                y = j - dt0 * v[i][j];
-                if (x < 0.5) {
-                    x = 0.5;
-                }
-                if (x > N + 0.5) {
-                    x = N + 0.5;
-                }
-                if (y < 0.5) {
-                    y = 0.5;
-                }
-                if (y > N + 0.5) {
-                    y = N + 0.5;
-                }
-                double[] fixxed = so.semiLang(x,y);
+                if(so.ocs[i][j]!=so.E)continue;//optimization. Values would be overwritten by boundary conditions after loop ends
+                
+                double[] fixxed = so.semiLang(i,j,u[i][j],v[i][j],dt0);
                 x = fixxed[0];
                 y = fixxed[1];
                 i0 = (int) x;
@@ -123,12 +111,14 @@ public class STEPS {
     }
 
     public static void project(double[][] u, double[][] v, double[][] p, double[][] div, StaticObjectsField so) {
+        //imperfect... wall one end of wind tunnel scenario and it becomes quitte obvious that the vector field does not become divergence free... Every cell has more incoming than it has outgoing + backwards euler = decrease of mass!
         int N = u.length - 2;
         int i, j, k;
         double h;
         h = 1.0 / N;
         for (i = 1; i <= N; i++) {
             for (j = 1; j <= N; j++) {
+                if(so.ocs[i][j]!=so.E)continue;
                 div[i][j] = -0.5 * h * (u[i + 1][j] - u[i - 1][j]
                         + v[i][j + 1] - v[i][j - 1]);
                 p[i][j] = 0;
@@ -139,6 +129,7 @@ public class STEPS {
         for (k = 0; k < 20; k++) {
             for (i = 1; i <= N; i++) {
                 for (j = 1; j <= N; j++) {
+                    if(so.ocs[i][j]!=so.E)continue;
                     p[i][j] = (div[i][j] + p[i - 1][j] + p[i + 1][j]
                             + p[i][j - 1] + p[i][j + 1]) / 4;
                 }
@@ -147,6 +138,7 @@ public class STEPS {
         }
         for (i = 1; i <= N; i++) {
             for (j = 1; j <= N; j++) {
+                if(so.ocs[i][j]!=so.E)continue;
                 u[i][j] -= 0.5 * (p[i + 1][j] - p[i - 1][j]) / h;
                 v[i][j] -= 0.5 * (p[i][j + 1] - p[i][j - 1]) / h;
             }

@@ -86,8 +86,9 @@ public class GUI extends javax.swing.JFrame {
                             if (pressing && !handled && dragging == null) {
                                 if (shift) {
                                     if (middle && pintern != null) {
-                                        u[intern.x][intern.y] = (intern.x - pintern.x);
-                                        v[intern.x][intern.y] = (intern.y - pintern.y);
+                                        double k = 2;
+                                        u[intern.x][intern.y] = (intern.x - pintern.x)*k;
+                                        v[intern.x][intern.y] = (intern.y - pintern.y)*k;
                                     } else {
                                         double scale = 1;
                                         for (int i = -1; i <= 1; i++) {
