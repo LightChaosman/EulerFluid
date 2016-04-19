@@ -214,3 +214,15 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+Fluid/.idea/compiler.xml
+
+Fluid/.idea/copyright/profiles_settings.xml
+
+Fluid/.idea/misc.xml
+
+Fluid/.idea/modules.xml
+
+Fluid/.idea/vcs.xml
+
+Fluid/.idea/workspace.xml
