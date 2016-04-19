@@ -27,13 +27,13 @@ public class Simulation {
     public final StaticObjectsField so;
     public final RigidBodies rbodies;
     public final ArrayList<Force> forces;
-    public double mass = 0;
     public final int N;//The ammount of gridcells in 1D, that is, we have N*N internal gridcels, (N+2)^2 counting the boundary
     private final double h;//Thegridspacing : 1/N -> our gridsides have dimension 1
     private final double dt;//The timestep
     private final double diff; //The diffusion rate
     private final double visc;//The viscosity of the fluid
     private final double epsilon;//The vorticity confinement parameter
+    public boolean norm = false;
 
     public Simulation(int N, double dt, double diff, double visc, double epsilon, RigidBodies bodies) {//indices to be used: [1,N], not [0,N-1]!
         this.u = new VelocityField(N, true);
@@ -58,13 +58,11 @@ public class Simulation {
     {
         rbodies.finalToX();
         rbodies.solveODE(0,dt,this);
-        rho.dens_step(rhoInput, u.u, u.v, diff, dt,so);
+        rho.dens_step(rhoInput, u.u, u.v, diff, dt,so,norm);
         STEPS.computeVorticityForce(uInput, vInput, u.u, u.v, epsilon);
         u.vel_step(uInput, vInput, visc, dt,so);
         rbodies.finalToBodies();
-        double s = 0;
-        for(int i = 1; i <= N; i++)for(int j = 1; j <= N;j++)s+=rho.field[i][j]*(so.ocs[i][j]==so.E?1:0);
-        mass = s;
+        
     }
 
     void addStaticBlock(int x, int y) {

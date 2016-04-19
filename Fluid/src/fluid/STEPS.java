@@ -8,13 +8,15 @@ package fluid;
 public class STEPS {
 
     public static int bndmode = 0;//0 for default, 1 for wind tunnel
-    public static final int MAXMODE =2;
+    public static final int MAXMODE =1;
 
-    public static void addSource(double[][] x, double[][] s, double dt) {
-        assert s.length == x.length;
-        assert s[0].length == s.length;
+    public static void addSource(double[][] x,  double dt,double[][]... ss) {
+        double[][] s1 = ss[0];
+        assert s1.length == x.length;
+        assert s1[0].length == s1.length;
         assert x[0].length == x.length;
         assert x.length >= 2;
+        for(double[][] s:ss)
         for (int i = 0; i < x.length; i++) {
             for (int j = 0; j < x.length; j++) {//Notice that since field.length == field[0].length this is justified
                 x[i][j] += s[i][j] * dt;
@@ -88,21 +90,13 @@ public class STEPS {
                 }   break;
             case 1:
                 for (int i = 1; i <= N; i++) {
-                    x[0][i] = b == 1 ? -x[1][i]-.05 : x[1][i];
-                    x[N + 1][i] = b == 1 ? -x[N][i]-.05 : (b==3?0:x[N][i]);
+                    x[0][i] = b == 1 ? -.05 : x[1][i];
+                    x[N + 1][i] = b == 1 ? -.05 : (b==3?0:x[N][i]);
                     x[i][0] = b == 2 ? -x[i][1] : x[i][1];
                     x[i][N + 1] = b == 2 ? -x[i][N] : x[i][N];
                 }   break;
             default:
-                int k = 15;
-                int l = k/2;
-                int l1 = l+1;
-                for (int i = 1; i <= N; i++) {
-                    x[0][i] = b == 1 ? -x[1][i]-.05 : x[1][i];
-                    x[N + 1][i] = b == 1 ? -x[N][i]-.05 : (b==3?(((l*N)/k<=i && i <= (l1*N)/k)?10:0):x[N][i]);
-                    x[i][0] = b == 2 ? -x[i][1] : x[i][1];
-                    x[i][N + 1] = b == 2 ? -x[i][N] : x[i][N];
-                }   break;
+                  break;
         }
         x[0][0] = 0.5 * (x[1][0] + x[0][1]);
         x[0][N + 1] = 0.5 * (x[1][N + 1] + x[0][N]);

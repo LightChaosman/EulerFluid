@@ -30,18 +30,6 @@ import rigids.forces.MouseSpring;
  */
 public class GUI extends javax.swing.JFrame {
 
-    private final static String GUIDE = ""
-            + "Controls:\n"
-            + "Click anywhere to add 'smoke'\n"
-            + "Click anywhere while holding CTRL to place solid walls\n"
-            + "Click anywhere while holding SHIFT to exert a force on the fluid\n"
-            + "Click on a moving solid to drag it around\n"
-            + "Right click anywhere to reestablish the last connection to a rigid body\n"
-            + "Press SPACE to toggle simulation on/off\n"
-            + "Press V to toggle the rendering of the vector field\n"
-            + "Press M to toggle wind-tunnel mode\n"
-            + "Play with SHIFT + middle mouse button for fun";
-
     private HashMap<RigidBody, java.awt.Polygon> polymap = new HashMap<>();
 
     private final Simulation s;
@@ -53,6 +41,7 @@ public class GUI extends javax.swing.JFrame {
     boolean showVecField = true;
     double fps = 0;
     boolean middle = false;
+    boolean splus = false, smin = false;
 
     RigidBody dragging = null, pdragging;
     double[] dragloc, pdragloc;
@@ -75,7 +64,7 @@ public class GUI extends javax.swing.JFrame {
                     while (true) {
                         long x = System.nanoTime();
                         boolean handled = false;
-                        if (pressing & ctrl && dragging == null && intern!=null) {
+                        if (pressing & ctrl && dragging == null && intern != null) {
                             s.addStaticBlock(intern.x, intern.y);
                             handled = true;
                         }
@@ -84,25 +73,13 @@ public class GUI extends javax.swing.JFrame {
                             double[][] u = new double[s.N + 2][s.N + 2];
                             double[][] v = new double[s.N + 2][s.N + 2];
                             if (pressing && !handled && dragging == null) {
-                                if (shift) {
-                                    if (middle && pintern != null) {
-                                        double k = 2;
-                                        u[intern.x][intern.y] = (intern.x - pintern.x)*k;
-                                        v[intern.x][intern.y] = (intern.y - pintern.y)*k;
-                                    } else {
-                                        double scale = 1;
-                                        for (int i = -1; i <= 1; i++) {
-                                            for (int j = -1; j <= 1; j++) {
-                                                if (i == 0 && j == 0) {
-                                                    continue;
-                                                }
-                                                double phi = Math.atan2(j, i);
-                                                u[intern.x + i][intern.y + j] = scale * Math.sin(phi);
-                                                v[intern.x + i][intern.y + j] = scale * Math.cos(phi);
-                                            }
-
-                                        }
-                                    }
+                                System.out.println(splus + " " + smin);
+                                if (splus) {
+                                    s.rho.incSource(intern.x, intern.y);
+                                } else if (smin) {
+                                    s.rho.decSource(intern.x, intern.y);
+                                } else if (shift) {
+                                    AddMouseForces(u, v);
                                 } else {
                                     rho[intern.x][intern.y] = s.N * s.N / 50;
                                 }
@@ -134,6 +111,27 @@ public class GUI extends javax.swing.JFrame {
                     return null;
                 }
 
+            }
+
+            private void AddMouseForces(double[][] u, double[][] v) {
+                if (middle && pintern != null) {
+                    double k = 2;
+                    u[intern.x][intern.y] = (intern.x - pintern.x) * k;
+                    v[intern.x][intern.y] = (intern.y - pintern.y) * k;
+                } else {
+                    double scale = 1;
+                    for (int i = -1; i <= 1; i++) {
+                        for (int j = -1; j <= 1; j++) {
+                            if (i == 0 && j == 0) {
+                                continue;
+                            }
+                            double phi = Math.atan2(j, i);
+                            u[intern.x + i][intern.y + j] = scale * Math.sin(phi);
+                            v[intern.x + i][intern.y + j] = scale * Math.cos(phi);
+                        }
+
+                    }
+                }
             }
 
         };
@@ -253,7 +251,7 @@ public class GUI extends javax.swing.JFrame {
             }
             drawRigidBodies(g);
             g.setColor(Color.WHITE);
-            String guide2 = GUIDE + "\nfps: " + fps + "\nTotal mass in system: " + s.mass;
+            String guide2 = buildGuide();
             drawString(g, guide2, 5, this.getHeight() - (g.getFontMetrics().getHeight() * (guide2.split("\n").length) + 5));
         }
 
@@ -289,24 +287,30 @@ public class GUI extends javax.swing.JFrame {
 
                     int x0 = (int) (dw * i0);
                     int y0 = (int) (dh * j0);
-                     
-                        double rho = s.rho.field[i][j];
-                        double rho2 = Math.max(Math.min(1, rho), 0);
-                        double rho3 = Math.max(Math.min(1, rho - 1), 0);
-                        double rho4 = Math.max(Math.min(1, rho - 2), 0);
-                        double rho5 = Math.max(Math.min(1, rho - 3), 0);
-                        double rho6 = Math.max(Math.min(1, rho - 4), 0);
-                        double rho7 = Math.max(Math.min(1, rho - 5), 0);
-                        double rho8 = Math.max(Math.min(1, rho - 6), 0);
-                        double rho9 = Math.max(Math.min(1, rho - 7), 0);
-                        Color c = new Color((int) ((rho5) * 255), (int) ((rho2 - rho4 + rho7) * 255), (int) ((rho3 - rho6 + rho8) * 255));
-                        g.setColor(c);
-                        g.fillRect(x0, y0, dw2 + 1, dh2 + 1);
+
+                    double rho = s.rho.field[i][j];
+                    double rho2 = Math.max(Math.min(1, rho), 0);
+                    double rho3 = Math.max(Math.min(1, rho - 1), 0);
+                    double rho4 = Math.max(Math.min(1, rho - 2), 0);
+                    double rho5 = Math.max(Math.min(1, rho - 3), 0);
+                    double rho6 = Math.max(Math.min(1, rho - 4), 0);
+                    double rho7 = Math.max(Math.min(1, rho - 5), 0);
+                    double rho8 = Math.max(Math.min(1, rho - 6), 0);
+                    Color c = new Color((int) ((rho5) * 255), (int) ((rho2 - rho4 + rho7) * 255), (int) ((rho3 - rho6 + rho8) * 255));
+                    g.setColor(c);
+                    g.fillRect(x0, y0, dw2 + 1, dh2 + 1);
                     if (s.so.ocs[i][j] != 0) {
                         g.setColor(Color.BLUE);
-                        g.drawRect(x0, y0, dw2 + 1, dh2 + 1);
+                        g.fillRect(x0, y0, dw2 + 1, dh2 + 1);
                         g.setColor(Color.WHITE);
                         g.drawString(s.so.ocs[i][j] + "", x0, y0 + (int) dh);
+                    }
+                    if (s.rho.permsources[i][j] > 0) {
+                        g.setColor(Color.DARK_GRAY);
+                        ((Graphics2D) g).setStroke(new BasicStroke(2f));
+                        g.drawRect(x0, y0, dw2 + 1, dw2 + 1);
+
+                        ((Graphics2D) g).setStroke(new BasicStroke(1f));
                     }
 
                     j0 = j;
@@ -362,7 +366,7 @@ public class GUI extends javax.swing.JFrame {
                 return;
             }
             if (e.getButton() == MouseEvent.BUTTON2) {
-                
+
                 middle = true;
 
             } else {
@@ -411,7 +415,7 @@ public class GUI extends javax.swing.JFrame {
 
         @Override
         public void mouseDragged(MouseEvent e) {
-            
+
             loc = e.getPoint();
             pintern = intern;
             intern = toInternal(loc);
@@ -445,6 +449,23 @@ public class GUI extends javax.swing.JFrame {
                     break;
                 case KeyEvent.VK_M:
                     STEPS.bndmode = (STEPS.bndmode + 1) % (STEPS.MAXMODE + 1);
+                    break;
+                case KeyEvent.VK_N:
+                    s.norm = !s.norm;
+                    break;
+                case KeyEvent.VK_MINUS:
+                    smin = !smin;
+                    if (splus && smin) {
+                        splus = false;
+                    }
+                    break;
+                case KeyEvent.VK_EQUALS:
+                case KeyEvent.VK_PLUS:
+                    splus = !splus;
+                    if (smin && splus) {
+                        smin = false;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -459,6 +480,7 @@ public class GUI extends javax.swing.JFrame {
                 case KeyEvent.VK_SHIFT:
                     shift = false;
                     break;
+
                 default:
                     break;
             }
@@ -500,6 +522,21 @@ public class GUI extends javax.swing.JFrame {
                 g.drawLine(loc.x, loc.y, (int) (x * this.getWidth()), (int) (y * this.getHeight()));
                 ((Graphics2D) g).setStroke(new BasicStroke(1f));
             }
+        }
+
+        private String buildGuide() {
+            return "Controls:\n"
+                    + "Click anywhere to add 'smoke'\n"
+                    + "Click anywhere while holding CTRL to place solid walls\n"
+                    + "Click anywhere while holding SHIFT to exert a force on the fluid\n"
+                    + "Click on a moving solid to drag it around\n"
+                    + "Right click anywhere to reestablish the last connection to a rigid body\n"
+                    + "Play with SHIFT + middle mouse button for fun\n"
+                    + "Press SPACE to toggle simulation on/off\n"
+                    + "Press V to toggle the rendering of the vector field: " + (showVecField ? "ON" : "OFF") + "\n"
+                    + "Press M to toggle wind-tunnel mode: " + ((STEPS.bndmode == 1) ? "ON" : "OFF") + "\n"
+                    + "Press N to enable toggle density conservation: " + (s.norm ? "ON" : "OFF") + "\n"
+                    + "Press +/- to toggle increase/decrease permanent source: " +(splus?"ON/":"OFF/") +(smin?"ON":"OFF")+ "\nfps: " + fps + "\nTotal mass in system: " + s.rho.mass;
         }
 
     }

@@ -32,8 +32,8 @@ public class VelocityField {
         double[][] u = this.u;
         double[][] v = this.v;
         double[][] temp;
-        STEPS.addSource( u, u0, dt);
-        STEPS.addSource( v, v0, dt);
+        STEPS.addSource( u,dt, u0 );
+        STEPS.addSource( v,dt, v0);
         temp=u0;u0=u;u=temp;
         STEPS.diffuse(1, u, u0, visc, dt,so);
         temp=v0;v0=v;v=temp;
