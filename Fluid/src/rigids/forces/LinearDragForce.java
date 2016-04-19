@@ -27,6 +27,7 @@ public class LinearDragForce implements Force{
     public void addForces() {
         body.Fx += -k*body.vx;
         body.Fy += -k*body.vy;
+        body.tau+= -k*body.omega;
     }
     
 }

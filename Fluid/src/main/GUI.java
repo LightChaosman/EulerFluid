@@ -29,6 +29,8 @@ import rigids.forces.MouseSpring;
  */
 public class GUI extends javax.swing.JFrame {
 
+    private final static String guide = "Controls:\nClick anywhere to add 'smoke'\nClick anywhere while holding CTRL to place solid walls\nClick anywhere while holding SHIFT to exert a force on the fluid\nClick on a moving solid to drag it around\nRight click anywhere to reestablish the last connection to a rigid body\nPress SPACE to toggle simulation on/off\npress V to toggle the rendering of the vector field";
+
     private HashMap<RigidBody, java.awt.Polygon> polymap = new HashMap<>();
 
     private final Simulation s;
@@ -37,6 +39,8 @@ public class GUI extends javax.swing.JFrame {
     boolean pressing = false;
     boolean ctrl = false;
     boolean shift = false;
+    boolean showVecField = true;
+    double fps = 0;
 
     RigidBody dragging = null, pdragging;
     double[] dragloc, pdragloc;
@@ -56,7 +60,7 @@ public class GUI extends javax.swing.JFrame {
             protected Object doInBackground() throws Exception {
                 try {
                     while (true) {
-                        long x = System.currentTimeMillis();
+                        long x = System.nanoTime();
                         boolean handled = false;
                         if (pressing & ctrl && dragging == null) {
                             System.out.println("adding blocks");
@@ -88,9 +92,10 @@ public class GUI extends javax.swing.JFrame {
                             s.step(rho, u, v);
                         }
                         jPanel1.repaint();
-                        long dt = System.currentTimeMillis() - x;
+                        long dt = System.nanoTime() - x;
                         if (dt > 0 && running) {
-                            System.out.println("fps: " + (1000l / dt));
+                            fps = 1000000000d/dt;
+                            System.out.println("fps: " + fps);
                         }
 
                     }
@@ -216,8 +221,18 @@ public class GUI extends javax.swing.JFrame {
 
             i0 = 0;
             j0 = 0;
-            drawVelocities(dw, i0, dh, j0, g);
+            if(showVecField){
+            drawVelocities(dw, i0, dh, j0, g);}
             drawRigidBodies(g);
+            g.setColor(Color.WHITE);
+            String guide2 = guide + "\nfps: "+fps;
+            drawString(g, guide2, 5, this.getHeight()-(g.getFontMetrics().getHeight()*(guide2.split("\n").length)+5));
+        }
+
+        void drawString(Graphics g, String text, int x, int y) {
+            for (String line : text.split("\n")) {
+                g.drawString(line, x, y += g.getFontMetrics().getHeight());
+            }
         }
 
         private void drawVelocities(double dw, int i0, double dh, int j0, Graphics g) {
@@ -341,9 +356,9 @@ public class GUI extends javax.swing.JFrame {
         @Override
         public void mouseReleased(MouseEvent e) {
             pressing = false;
-            pdragging = dragging!=null?dragging:pdragging;
+            pdragging = dragging != null ? dragging : pdragging;
             dragging = null;
-            pdragloc = dragloc!=null?dragloc:pdragloc;
+            pdragloc = dragloc != null ? dragloc : pdragloc;
             dragloc = null;
             ((MouseSpring) s.forces.get(0)).body = null;
 
@@ -388,6 +403,8 @@ public class GUI extends javax.swing.JFrame {
                 case KeyEvent.VK_SHIFT:
                     shift = true;
                     break;
+                case KeyEvent.VK_V:
+                    showVecField = !showVecField;
                 default:
                     break;
             }
@@ -423,16 +440,16 @@ public class GUI extends javax.swing.JFrame {
                 java.awt.Polygon p2 = new java.awt.Polygon(xs, ys, xs.length);
                 g.fillPolygon(p2);
                 polymap.put(r, p2);
-                int cx = (int)(this.getWidth()*r.x);
-                int cy = (int)(this.getHeight()*r.y);
-                int dvy = (int)(this.getHeight()*r.vy);
-                int dvx = (int)(this.getWidth()*r.vx);
-                int dFy = (int)(this.getHeight()*r.Fy*100);
-                int dFx = (int)(this.getWidth()*r.Fx*100);
+                int cx = (int) (this.getWidth() * r.x);
+                int cy = (int) (this.getHeight() * r.y);
+                int dvy = (int) (this.getHeight() * r.vy);
+                int dvx = (int) (this.getWidth() * r.vx);
+                int dFy = (int) (this.getHeight() * r.Fy * 100);
+                int dFx = (int) (this.getWidth() * r.Fx * 100);
                 g.setColor(Color.BLUE);
-                g.drawLine(cx, cy, cx+dvx, cy+dvy);
+                g.drawLine(cx, cy, cx + dvx, cy + dvy);
                 g.setColor(Color.GREEN);
-                g.drawLine(cx, cy, cx+dFx, cy+dFy);
+                g.drawLine(cx, cy, cx + dFx, cy + dFy);
             }
 
             if (dragging != null) {

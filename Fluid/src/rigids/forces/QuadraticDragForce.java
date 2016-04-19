@@ -29,6 +29,8 @@ public class QuadraticDragForce implements Force{
         double l = Math.sqrt(speed2);
         body.Fx += -k*body.vx/l*speed2;
         body.Fy += -k*body.vy/l*speed2;
+        
+        body.tau += -k*k*body.omega*Math.abs(body.omega);
     }
     
 }
