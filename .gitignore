@@ -228,3 +228,7 @@ Fluid/.idea/vcs.xml
 Fluid/.idea/workspace.xml
 *.properties
 Fluid/nbproject/private/private.xml
+
+Fluid/.idea/uiDesigner.xml
+
+*.class
