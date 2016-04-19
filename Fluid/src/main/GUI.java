@@ -1,5 +1,6 @@
 package main;
 
+import fluid.STEPS;
 import java.awt.BasicStroke;
 import rigids.Polygon;
 import rigids.RigidBody;
@@ -29,7 +30,17 @@ import rigids.forces.MouseSpring;
  */
 public class GUI extends javax.swing.JFrame {
 
-    private final static String guide = "Controls:\nClick anywhere to add 'smoke'\nClick anywhere while holding CTRL to place solid walls\nClick anywhere while holding SHIFT to exert a force on the fluid\nClick on a moving solid to drag it around\nRight click anywhere to reestablish the last connection to a rigid body\nPress SPACE to toggle simulation on/off\npress V to toggle the rendering of the vector field";
+    private final static String guide = ""
+            + "Controls:\n"
+            + "Click anywhere to add 'smoke'\n"
+            + "Click anywhere while holding CTRL to place solid walls\n"
+            + "Click anywhere while holding SHIFT to exert a force on the fluid\n"
+            + "Click on a moving solid to drag it around\n"
+            + "Right click anywhere to reestablish the last connection to a rigid body\n"
+            + "Press SPACE to toggle simulation on/off\n"
+            + "Press V to toggle the rendering of the vector field\n"
+            + "Press M to toggle wind-tunnel mode\n"
+            + "Play with SHIFT + middle mouse button for fun";
 
     private HashMap<RigidBody, java.awt.Polygon> polymap = new HashMap<>();
 
@@ -41,11 +52,13 @@ public class GUI extends javax.swing.JFrame {
     boolean shift = false;
     boolean showVecField = true;
     double fps = 0;
+    boolean middle = false;
 
     RigidBody dragging = null, pdragging;
     double[] dragloc, pdragloc;
     Point intern;
     Point loc;
+    Point pintern;
 
     /**
      * Creates new form GUI
@@ -63,7 +76,6 @@ public class GUI extends javax.swing.JFrame {
                         long x = System.nanoTime();
                         boolean handled = false;
                         if (pressing & ctrl && dragging == null) {
-                            System.out.println("adding blocks");
                             s.addStaticBlock(intern.x, intern.y);
                             handled = true;
                         }
@@ -73,11 +85,21 @@ public class GUI extends javax.swing.JFrame {
                             double[][] v = new double[s.N + 2][s.N + 2];
                             if (pressing && !handled && dragging == null) {
                                 if (shift) {
-                                    double scale = 5;
-                                    for (int i = -1; i <= 1; i++) {
-                                        for (int j = -1; j <= 1; j++) {
-                                            u[intern.x + i][intern.y + j] = -i * scale;
-                                            v[intern.x + i][intern.y + j] = -j * scale;
+                                    if (middle && pintern != null) {
+                                        u[intern.x][intern.y] = (intern.x - pintern.x);
+                                        v[intern.x][intern.y] = (intern.y - pintern.y);
+                                    } else {
+                                        double scale = 1;
+                                        for (int i = -1; i <= 1; i++) {
+                                            for (int j = -1; j <= 1; j++) {
+                                                if (i == 0 && j == 0) {
+                                                    continue;
+                                                }
+                                                double phi = Math.atan2(j, i);
+                                                u[intern.x + i][intern.y + j] = scale * Math.sin(phi);
+                                                v[intern.x + i][intern.y + j] = scale * Math.cos(phi);
+                                            }
+
                                         }
                                     }
                                 } else {
@@ -94,13 +116,17 @@ public class GUI extends javax.swing.JFrame {
                         jPanel1.repaint();
                         long dt = System.nanoTime() - x;
                         if (dt > 0 && running) {
-                            fps = 1000000000d/dt;
-                            System.out.println("fps: " + fps);
+                            fps = 1000000000d / dt;
                         }
 
                     }
 
                 } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(rootPane, ex);
+                    System.out.println(ex);
+                    ex.printStackTrace();
+                    return null;
+                } catch (Error ex) {
                     JOptionPane.showMessageDialog(rootPane, ex);
                     System.out.println(ex);
                     ex.printStackTrace();
@@ -221,12 +247,13 @@ public class GUI extends javax.swing.JFrame {
 
             i0 = 0;
             j0 = 0;
-            if(showVecField){
-            drawVelocities(dw, i0, dh, j0, g);}
+            if (showVecField) {
+                drawVelocities(dw, i0, dh, j0, g);
+            }
             drawRigidBodies(g);
             g.setColor(Color.WHITE);
-            String guide2 = guide + "\nfps: "+fps;
-            drawString(g, guide2, 5, this.getHeight()-(g.getFontMetrics().getHeight()*(guide2.split("\n").length)+5));
+            String guide2 = guide + "\nfps: " + fps + "\nTotal mass in system: " + s.mass;
+            drawString(g, guide2, 5, this.getHeight() - (g.getFontMetrics().getHeight() * (guide2.split("\n").length) + 5));
         }
 
         void drawString(Graphics g, String text, int x, int y) {
@@ -239,17 +266,13 @@ public class GUI extends javax.swing.JFrame {
             for (int i = 1; i <= s.N; i++) {
                 for (int j = 1; j <= s.N; j++) {
 
-                    int x0 = (int) (dw * i0);
-                    int y0 = (int) (dh * j0);
-
                     g.setColor(Color.RED);
                     double u = s.u.u[i][j];
                     double v = s.u.v[i][j];
-                    double scale = 1000;
                     int centerx = (int) (dw * i0 + dw / 2d);
                     int centery = (int) (dh * j0 + dh / 2d);
-                    int endx = (int) (centerx + scale * u);
-                    int endy = (int) (centery + scale * v);
+                    int endx = (int) (centerx + getWidth() * u);
+                    int endy = (int) (centery + getHeight() * v);
                     g.drawLine(centerx, centery, endx, endy);
 
                     j0 = j;
@@ -278,7 +301,9 @@ public class GUI extends javax.swing.JFrame {
                         double rho5 = Math.max(Math.min(1, rho - 3), 0);
                         double rho6 = Math.max(Math.min(1, rho - 4), 0);
                         double rho7 = Math.max(Math.min(1, rho - 5), 0);
-                        Color c = new Color((int) ((rho5) * 255), (int) ((rho2 - rho4 + rho7) * 255), (int) ((rho3 - rho6) * 255));
+                        double rho8 = Math.max(Math.min(1, rho - 6), 0);
+                        double rho9 = Math.max(Math.min(1, rho - 7), 0);
+                        Color c = new Color((int) ((rho5) * 255), (int) ((rho2 - rho4 + rho7) * 255), (int) ((rho3 - rho6 + rho8) * 255));
                         g.setColor(c);
                         g.fillRect(x0, y0, dw2 + 1, dh2 + 1);
                     }
@@ -330,31 +355,40 @@ public class GUI extends javax.swing.JFrame {
                     dragging = pdragging;
                     dragloc = pdragloc;
                     loc = e.getPoint();
+                    pintern = intern;
                     intern = toInternal(loc);
                 }
                 return;
             }
-            for (int i = 0; i < s.rbodies.bodies.length; i++) {
-                if (polymap.containsKey(s.rbodies.bodies[i]) && polymap.get(s.rbodies.bodies[i]).contains(e.getPoint())) {
-                    dragging = s.rbodies.bodies[i];
-                    double intx = (double) e.getPoint().x / this.getWidth();
-                    double inty = (double) e.getPoint().y / this.getHeight();
-                    intx -= dragging.x;
-                    inty -= dragging.y;
-                    double locx = intx * Math.cos(-dragging.theta) + inty * (-Math.sin(-dragging.theta));
-                    double locy = intx * Math.sin(-dragging.theta) + inty * (Math.cos(-dragging.theta));
-                    dragloc = new double[]{locx, locy};
-                    ((MouseSpring) s.forces.get(0)).bbx = locx;
-                    ((MouseSpring) s.forces.get(0)).bby = locy;
+            if (e.getButton() == MouseEvent.BUTTON2) {
+                
+                middle = true;
+
+            } else {
+                for (int i = 0; i < s.rbodies.bodies.length; i++) {
+                    if (polymap.containsKey(s.rbodies.bodies[i]) && polymap.get(s.rbodies.bodies[i]).contains(e.getPoint())) {
+                        dragging = s.rbodies.bodies[i];
+                        double intx = (double) e.getPoint().x / this.getWidth();
+                        double inty = (double) e.getPoint().y / this.getHeight();
+                        intx -= dragging.x;
+                        inty -= dragging.y;
+                        double locx = intx * Math.cos(-dragging.theta) + inty * (-Math.sin(-dragging.theta));
+                        double locy = intx * Math.sin(-dragging.theta) + inty * (Math.cos(-dragging.theta));
+                        dragloc = new double[]{locx, locy};
+                        ((MouseSpring) s.forces.get(0)).bbx = locx;
+                        ((MouseSpring) s.forces.get(0)).bby = locy;
+                    }
                 }
             }
             pressing = true; //To change body of generated methods, choose Tools | Templates.
             loc = e.getPoint();
+            pintern = intern;
             intern = toInternal(loc);
         }
 
         @Override
         public void mouseReleased(MouseEvent e) {
+            middle = false;
             pressing = false;
             pdragging = dragging != null ? dragging : pdragging;
             dragging = null;
@@ -376,7 +410,9 @@ public class GUI extends javax.swing.JFrame {
 
         @Override
         public void mouseDragged(MouseEvent e) {
+            
             loc = e.getPoint();
+            pintern = intern;
             intern = toInternal(loc);
         }
 
@@ -405,6 +441,9 @@ public class GUI extends javax.swing.JFrame {
                     break;
                 case KeyEvent.VK_V:
                     showVecField = !showVecField;
+                    break;
+                case KeyEvent.VK_M:
+                    STEPS.bndmode = (STEPS.bndmode + 1) % (STEPS.MAXMODE + 1);
                 default:
                     break;
             }

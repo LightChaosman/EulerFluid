@@ -37,11 +37,11 @@ public class DensityField {
         temp = x0;
         x0 = x;
         x = temp;
-        STEPS.diffuse(0, x, x0, diff, dt,so);
+        STEPS.diffuse(3, x, x0, diff, dt,so);
         temp = x0;
         x0 = x;
         x = temp;
-        STEPS.advect(0, x, x0, u, v, dt,so);
+        STEPS.advect(3, x, x0, u, v, dt,so);
         field = x;
     }
 

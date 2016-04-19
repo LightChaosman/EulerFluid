@@ -27,6 +27,7 @@ public class Simulation {
     public final StaticObjectsField so;
     public final RigidBodies rbodies;
     public final ArrayList<Force> forces;
+    public double mass = 0;
     public final int N;//The ammount of gridcells in 1D, that is, we have N*N internal gridcels, (N+2)^2 counting the boundary
     private final double h;//Thegridspacing : 1/N -> our gridsides have dimension 1
     private final double dt;//The timestep
@@ -63,7 +64,7 @@ public class Simulation {
         rbodies.finalToBodies();
         double s = 0;
         for(int i = 1; i <= N; i++)for(int j = 1; j <= N;j++)s+=rho.field[i][j];
-        System.out.println("total matter: " + s);
+        mass = s;
     }
 
     void addStaticBlock(int x, int y) {
