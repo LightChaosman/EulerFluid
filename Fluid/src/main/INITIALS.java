@@ -22,13 +22,16 @@ public class INITIALS {
     public static Simulation GRAVITY()
     {
         double scale = 1;
-        RigidBody rb = RigidBody.tiltedSquare(Math.PI*2d/360d * 0, .1, .5+0.2, .5+0);
+        RigidBody rb = RigidBody.tiltedSquare(0, .1, .5+0.2, .5+0);
+        RigidBody rb2 = RigidBody.tiltedSquare(0, .1, .5-0.2, .5+0);
         rb.Px = 0.000000001;
+        rb2.Px = 0.000000001;
         //rb.L = -.00001;
         
-        RigidBody[] rbs = new RigidBody[]{rb};
-        //rbs = new RigidBody[]{};
-        Simulation s = new Simulation(100,0.05,0.0001,0.00001,.25,new RigidBodies(rbs,100));
+        RigidBody[] rbs = new RigidBody[]{rb,rb2};
+        //rbs = new RigidBody[]{}; 
+        int N = 100;
+        Simulation s = new Simulation(N,0.05,0.0001,0.0000001,1,new RigidBodies(rbs,N));
         for(int i = 1; i <= s.N; i++){for(int j = 1; j <= s.N;j++){
             int dx = i-s.N/2;
             int dy = j-s.N/2;

@@ -7,11 +7,9 @@ import fluid.StaticObjectsField;
 import java.util.ArrayList;
 import rigids.OccupiedCell;
 import rigids.forces.Force;
-import rigids.forces.LinearDragForce;
 import rigids.forces.MouseSpring;
 import rigids.RigidBodies;
 import rigids.RigidBody;
-import rigids.forces.QuadraticDragForce;
 
 /**
  * Preconditions of internal functions will be enforced using "assert" commands.
@@ -49,28 +47,17 @@ public class Simulation {
         this.rbodies = bodies;
         forces = new ArrayList<>();
         forces.add(new MouseSpring());
-        for (RigidBody b : bodies.bodies) {
-            forces.add(new QuadraticDragForce(b, .01));
-        }
         rbodies.findCells(N);
     }
 
     public void step(double[][] rhoInput, double[][] uInput, double[][] vInput) {
-        System.out.println("a");
-        rbodies.finalToX();
-        System.out.println("b");
-        rbodies.solveODE(0, dt, this);
-        System.out.println("c");
-        rho.dens_step(rhoInput, u.u, u.v, diff, dt, so, norm, rbodies);
-        System.out.println("d");
-        STEPS.computeVorticityForce(uInput, vInput, u.u, u.v, epsilon);
-        System.out.println("e");
-        u.vel_step(uInput, vInput, visc, dt, so, rbodies);
-        System.out.println("f");
-        rbodies.finalToBodies();
-        System.out.println("g");
-        rbodies.findCells(N);
-
+        rbodies.finalToX();//create a state vector for the rigid bodies
+        rbodies.solveODE(0, dt, this);//Calculate the next state of the rigid bodies, but don't update yet
+        rho.dens_step(rhoInput, u.u, u.v, diff, dt, so, norm, rbodies);//Do a density step
+        STEPS.computeVorticityForce(uInput, vInput, u.u, u.v, epsilon);//compute the vorticity confinement
+        u.vel_step(uInput, vInput, visc, dt, so, rbodies);//do a velocity step
+        rbodies.finalToBodies();//update the state of the rigid bodies
+        rbodies.findCells(N);//Compute the boundaray, inner and outer cells for the rigid bodies
     }
 
     void addStaticBlock(int x, int y) {
@@ -93,15 +80,14 @@ public class Simulation {
 
                 double vx = u.u[c.i][c.j];
                 double vy = u.v[c.i][c.j];
-                double Fix = (vx - c.vx) / N / N;//Normalise to N^2 -> bigger resolution should not result in a greater force
-                double Fiy = (vy - c.vy) / N / N;
+                double Fix = (vx - c.vx) / N /100;//Normalise to N^2 -> bigger resolution should not result in a greater force
+                double Fiy = (vy - c.vy) / N /100;
                 b.Fx += Fix;
                 b.Fy += Fiy;
 
                 double rix = intx - b.x;
                 double riy = inty - b.y;
                 b.tau += (rix * Fiy - riy * Fix);
-//TODO
             }
         }
     }

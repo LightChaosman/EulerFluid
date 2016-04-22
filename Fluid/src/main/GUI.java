@@ -13,7 +13,10 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.HashMap;
+import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
@@ -45,6 +48,7 @@ public class GUI extends javax.swing.JFrame {
     boolean splus = false, smin = false;
     boolean cdown = false;
     byte drawRigidBounds = 0;
+    boolean images = false;
 
     RigidBody dragging = null, pdragging;
     double[] dragloc, pdragloc;
@@ -93,7 +97,18 @@ public class GUI extends javax.swing.JFrame {
                             }
                             s.step(rho, u, v);
                         }
-                        jPanel1.repaint();
+                        if (images && running) {
+                            BufferedImage image = new BufferedImage(1000, 1000, BufferedImage.TYPE_INT_RGB);
+                            Graphics2D g2 = image.createGraphics();
+                            jPanel1.paint(g2);
+                            jPanel1.repaint();
+                            File f = new File("images/");
+                            f.mkdir();
+                            
+                            ImageIO.write(image, "png", new File("images/"+System.currentTimeMillis() + ".png"));
+                        } else {
+                            jPanel1.repaint();
+                        }
                         long dt = System.nanoTime() - x;
                         if (dt > 0 && running) {
                             fps = 1000000000d / dt;
@@ -138,8 +153,6 @@ public class GUI extends javax.swing.JFrame {
         };
         sw.execute();
 
-        
-
     }
 
     /**
@@ -155,26 +168,28 @@ public class GUI extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+        jPanel1.setPreferredSize(new java.awt.Dimension(1000, 1000));
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
+            .addGap(0, 1000, Short.MAX_VALUE)
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
+            .addGap(0, 1000, Short.MAX_VALUE)
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
         pack();
@@ -240,14 +255,18 @@ public class GUI extends javax.swing.JFrame {
         void fillCell(int i, int j, Color c) {
             g.setColor(c);
             g.fillRect(getCellTopLeftX(i, j), getCellTopLeftY(i, j), cellWidth, cellHeight);
-        }void drawCell(int i, int j, Color c) {
+        }
+
+        void drawCell(int i, int j, Color c) {
             g.setColor(c);
             g.drawRect(getCellTopLeftX(i, j), getCellTopLeftY(i, j), cellWidth, cellHeight);
-        }void drawCell(int i, int j, Color c,String s) {
+        }
+
+        void drawCell(int i, int j, Color c, String s) {
             g.setColor(c);
             g.drawRect(getCellTopLeftX(i, j), getCellTopLeftY(i, j), cellWidth, cellHeight);
             g.setColor(Color.WHITE);
-            g.drawString(s, getCellTopLeftX(i,j)+2, getCellTopLeftY(i,j)+cellHeight-1);
+            g.drawString(s, getCellTopLeftX(i, j) + 2, getCellTopLeftY(i, j) + cellHeight - 1);
         }
 
         int getCellCenterX(int i, int j) {
@@ -340,8 +359,8 @@ public class GUI extends javax.swing.JFrame {
                     double v = s.u.v[i][j];
                     int centerx = getCellCenterX(i, j);
                     int centery = getCellCenterY(i, j);
-                    int endx = (int) (centerx + getWidth() * u/2);
-                    int endy = (int) (centery + getHeight() * v/2);
+                    int endx = (int) (centerx + getWidth() * u / 2);
+                    int endy = (int) (centery + getHeight() * v / 2);
                     g.drawLine(centerx, centery, endx, endy);
                 }
             }
@@ -354,22 +373,27 @@ public class GUI extends javax.swing.JFrame {
         }
 
         private void drawRigidBodies() {
-            
+
             for (RigidBody b : s.rbodies.bodies) {
-                if(drawRigidBounds==3){for (OccupiedCell oc : b.getOutsideCells()) {
-                    drawCell(oc.i, oc.j, Color.PINK,""+s.rbodies.field.ocs[oc.i][oc.j]);
-                }}if(drawRigidBounds ==1){for (OccupiedCell oc : b.getOccupiedCells()) {
-                    drawCell(oc.i, oc.j, Color.CYAN,""+s.rbodies.field.ocs[oc.i][oc.j]);
-                }}else if(drawRigidBounds>=2){for (OccupiedCell oc : b.getOccupiedCells()) {
-                    fillCell(oc.i, oc.j, Color.CYAN/*,""+s.rbodies.field.ocs[oc.i][oc.j]*/);
-                }}
+                if (drawRigidBounds == 3) {
+                    for (OccupiedCell oc : b.getOutsideCells()) {
+                        drawCell(oc.i, oc.j, Color.PINK, "" + s.rbodies.field.ocs[oc.i][oc.j]);
+                    }
+                }
+                if (drawRigidBounds == 1) {
+                    for (OccupiedCell oc : b.getOccupiedCells()) {
+                        drawCell(oc.i, oc.j, Color.CYAN, "" + s.rbodies.field.ocs[oc.i][oc.j]);
+                    }
+                } else if (drawRigidBounds >= 2) {
+                    for (OccupiedCell oc : b.getOccupiedCells()) {
+                        fillCell(oc.i, oc.j, Color.CYAN/*,""+s.rbodies.field.ocs[oc.i][oc.j]*/);
+                    }
+                }
             }
-            
-            
-            Color c = Color.YELLOW;
-            g.setColor(c);
 
             for (RigidBody r : s.rbodies.bodies) {
+                Color c = Color.YELLOW;
+                g.setColor(c);
                 Polygon p = r.tp;
                 int[] xs = new int[p.pxs.length];
                 int[] ys = new int[p.pxs.length];
@@ -378,7 +402,11 @@ public class GUI extends javax.swing.JFrame {
                     ys[i] = convertYtoInt(p.pys[i]);
                 }
                 java.awt.Polygon p2 = new java.awt.Polygon(xs, ys, xs.length);
-                if(drawRigidBounds%2==0){g.fillPolygon(p2);}else{g.drawPolygon(p2);}
+                if (drawRigidBounds % 2 == 0) {
+                    g.fillPolygon(p2);
+                } else {
+                    g.drawPolygon(p2);
+                }
                 polymap.put(r, p2);
                 int cx = (int) (this.getWidth() * r.x);
                 int cy = (int) (this.getHeight() * r.y);
@@ -391,8 +419,6 @@ public class GUI extends javax.swing.JFrame {
                 g.setColor(Color.GREEN);
                 g.drawLine(cx, cy, cx + dFx, cy + dFy);
             }
-
-            
 
             if (dragging != null) {
                 double x = dragging.x + dragloc[0] * dragging.Rxx + dragloc[1] * dragging.Rxy;
@@ -548,8 +574,11 @@ public class GUI extends javax.swing.JFrame {
                 case KeyEvent.VK_C:
                     cdown = true;
                     break;
+                case KeyEvent.VK_I:
+                    images = true;
+                    break;
                 case KeyEvent.VK_B:
-                    drawRigidBounds=(byte)((drawRigidBounds+1)%4);
+                    drawRigidBounds = (byte) ((drawRigidBounds + 1) % 4);
                 default:
                     break;
             }
@@ -566,6 +595,8 @@ public class GUI extends javax.swing.JFrame {
                     break;
                 case KeyEvent.VK_C:
                     cdown = false;
+                    break;case KeyEvent.VK_I:
+                    images = false;
                     break;
                 default:
                     break;

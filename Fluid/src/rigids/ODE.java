@@ -25,11 +25,6 @@ public interface ODE {
             for(int i = 0; i < n;i++)
             {
                 xFinal[i]=x0[i]+dt*xdot[i];
-                if(i==8)
-                {
-                    
-                System.out.println(x0[i] + " --" + dt +"--> " +xFinal[i]);
-                }
             }
         }
         

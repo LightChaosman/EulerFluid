@@ -254,31 +254,23 @@ public class StaticObjectsField {
         
         double x = i - dt0 * u;
         double y = j - dt0 * v;//If the loop does not detect collision, this will be the result
-        
-        
-        
         v = -v * dt0;
-        u = -u * dt0;//inverse the speed...
-        int X = i;
+        u = -u * dt0;//inverse the speed, so we go forward
+        int X = i;//The initial cell
         int Y = j;
-
-        //looking for intersections s.t. X+tu = 1/2+k, 0<=t<=1, similar for Y+tv
-        int stepX = (int) Math.signum(u);
-        int stepY = (int) Math.signum(v);
+        int stepX = (int) Math.signum(u);//The direction in which the X coordinate goes
+        int stepY = (int) Math.signum(v);//The direction in which the Y coordinate goes
         //set to 2 if unreachable
         double tMaxX = (u==0)?2:Math.abs(1d / (2 * u));//Because we know we start at the center of a cell.. solve i+ut = i+1 or i-1 -> 
         double tMaxY = (v==0)?2:Math.abs(1d / (2 * v));
         double tDeltaX = (u==0)?0:1d / Math.abs(u);
         double tDeltaY =(v==0)?0: 1d / Math.abs(v);
-        int c = 0;
-        double t = 1;
-        while (X>= 1 && Y>= 1 && X<=N&&Y<=N) {
+        double t = 1;//how far along the path can we get? -> unchanged if no collision
+        while (X>= 1 && Y>= 1 && X<=N&&Y<=N) {//only continue as long as we are on the grid
             if (tMaxX < tMaxY) {
-                
                 if(tMaxX >1)break;
-                
                 X = X + stepX;
-                if(ocs[X][Y]!=E)
+                if(ocs[X][Y]!=E)//If we find an occupied cell, stop the loop
                 {
                     x = i+tMaxX*u;
                     y = j+tMaxX*v;
@@ -288,7 +280,6 @@ public class StaticObjectsField {
                 tMaxX = tMaxX + tDeltaX;
             } else {
                 if(tMaxY >1)break;
-                
                 Y = Y + stepY;
                 if(ocs[X][Y]!=E)
                 {

@@ -34,8 +34,8 @@ public class VelocityField {
         double[][] u = this.u;
         double[][] v = this.v;
         double[][] temp;
-        double[][] rigidSourceX = convertToRigidSourceX(rb);
-        double[][] rigidSourceY = convertToRigidSourceY(rb);
+        double[][] rigidSourceX = convertToRigidSourceX(rb,u);
+        double[][] rigidSourceY = convertToRigidSourceY(rb,v);
         STEPS.addSource(u, dt, u0, rigidSourceX);
         STEPS.addSource(v, dt, v0, rigidSourceY);
         assert inv(u);
@@ -63,9 +63,7 @@ public class VelocityField {
         temp = v0;
         v0 = v;
         v = temp;
-        System.out.println("x");
         STEPS.advect(1, u, u0, u0, v0, dt, so, rb);
-        System.out.println("x");
         assert inv(u);
         assert inv(v);
         STEPS.advect(2, v, v0, u0, v0, dt, so, rb);
@@ -89,25 +87,25 @@ public class VelocityField {
         return true;
     }
 
-    private double[][] convertToRigidSourceX(RigidBodies rb) {
+    private double[][] convertToRigidSourceX(RigidBodies rb, double[][] u) {
         double[][] force = new double[N+2][N+2];
         for(RigidBody b:rb.bodies)
         {
             for(OccupiedCell c:b.getOccupiedCells())
             {
-                force[c.i][c.j] = c.vx;
+                force[c.i][c.j] = (c.vx-u[c.i][c.j]);
             }
         }
         return force;
     }
 
-    private double[][] convertToRigidSourceY(RigidBodies rb) {
+    private double[][] convertToRigidSourceY(RigidBodies rb,double[][] v) {
         double[][] force = new double[N+2][N+2];
         for(RigidBody b:rb.bodies)
         {
             for(OccupiedCell c:b.getOccupiedCells())
             {
-                force[c.i][c.j] = c.vy;
+                force[c.i][c.j] = (c.vy-v[c.i][c.j]);
             }
         }
         return force;
