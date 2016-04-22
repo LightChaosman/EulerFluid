@@ -1,5 +1,6 @@
-package fluid;
+package rigids;
 
+import fluid.*;
 import java.util.HashSet;
 
 /*
@@ -11,7 +12,7 @@ import java.util.HashSet;
  *
  * @author Helmond
  */
-public class StaticObjectsField {
+public class MovingObjectsField {
 
     public static final byte E = 0;//empty cell
     public static final byte T = 1;//top open
@@ -31,15 +32,19 @@ public class StaticObjectsField {
     public static final byte FF = 15;//nothing open
     private static final byte S = 16;//special, internal value
 
+    public OccupiedCell[][] ocs2;
     public byte[][] ocs;
-    private final HashSet<int[]> filledLocations = new HashSet<>();//contains the cells that have at least 1 free neightbour
-    private final HashSet<int[]> fullLocations = new HashSet<>();//contains the cells that have no free neighbours
+    public OccupiedCell[][] cells;
+    private final HashSet<OccupiedCell> filledLocations = new HashSet<>();//contains the cells that have at least 1 free neightbour
+    private final HashSet<OccupiedCell> fullLocations = new HashSet<>();//contains the cells that have no free neighbours
+
     private final int N;
 
-    public StaticObjectsField(int size, boolean addBounds) {
+    public MovingObjectsField(int size, boolean addBounds) {
         size = size + (addBounds ? 2 : 0);
         this.N = size - 2;
         this.ocs = new byte[size][size];
+        this.cells = new OccupiedCell[size][size];
         for (int i = 0; i < N + 2; i++) {
             this.ocs[0][i] = S;
             this.ocs[i][0] = S;
@@ -49,47 +54,21 @@ public class StaticObjectsField {
 
     }
 
-    public void addCell(int x, int y) {
-        this.ocs[x][y] = S;
-        this.ocs[x + 1][y] = S;
-        this.ocs[x][y + 1] = S;
-        this.ocs[x + 1][y + 1] = S;
-
-        fixEdgecases(x, y);
+    public void updateField(RigidBody[] bodies) {
+        filledLocations.clear();
+        for (int i = 1; i <= N; i++) {
+            for (int j = 1; j <= N; j++) {
+                ocs[i][j] = E;
+                cells[i][j] = null;
+            }
+        }
+        for (RigidBody b : bodies) {
+            for (OccupiedCell c : b.getOccupiedCells()) {
+                ocs[c.i][c.j] = S;
+                cells[c.i][c.j] = c;
+            }
+        }
         relabelGrid();
-
-    }
-
-    /**
-     * Ensures we do not get thin parts
-     *
-     * @param x
-     * @param y
-     */
-    private void fixEdgecases(int x, int y) {
-        if (ocs[x - 1][y - 1] != 0 && ocs[x - 1][y] == 0 && ocs[x][y - 1] == 0) {
-            ocs[x - 1][y] = S;
-            ocs[x][y - 1] = S;
-        }
-
-        if (x != N) {
-            if (ocs[x + 2][y - 1] != 0 && ocs[x + 1][y - 1] == 0 && ocs[x + 2][y] == 0) {
-                ocs[x + 1][y - 1] = S;
-                ocs[x + 2][y] = S;
-            }
-        }
-        if (y != N) {
-            if (ocs[x - 1][y + 2] != 0 && ocs[x][y + 2] == 0 && ocs[x - 1][y + 1] == 0) {
-                ocs[x][y + 2] = S;
-                ocs[x - 1][y + 1] = S;
-            }
-        }
-        if (x != N && y != N) {
-            if (ocs[x + 2][y + 2] != 0 && ocs[x + 1][y + 2] == 0 && ocs[x + 2][y + 1] == 0) {
-                ocs[x + 1][y + 2] = S;
-                ocs[x + 2][y + 1] = S;
-            }
-        }
     }
 
     /**
@@ -97,8 +76,8 @@ public class StaticObjectsField {
      * method, but this is the least spaghetti-like solution
      */
     private void relabelGrid() {
-        fullLocations.clear();
         filledLocations.clear();
+        fullLocations.clear();
         for (int i = 1; i <= N; i++) {
             for (int j = 1; j <= N; j++) {
                 if (ocs[i][j] != E) {
@@ -121,7 +100,6 @@ public class StaticObjectsField {
                 l = ocs[i - 1][j] == E,
                 tl = ocs[i - 1][j + 1] == E;
         byte val;
-        int[] c = new int[]{i, j};
         if (t) {
             if (r) {
                 val = TR;
@@ -142,9 +120,9 @@ public class StaticObjectsField {
             val = L;
         } else if (r) {
             val = R;
-        } else {
-            fullLocations.add(c);
-            //all 4 direct neighbours are occupied
+        } else //all 4 direct neighbours are occupied
+        {
+            fullLocations.add(cells[i][j]);
             if (tr) {
                 if (bl) {
                     val = FTRBL;
@@ -165,22 +143,25 @@ public class StaticObjectsField {
                 val = FF;
             }
         }
-        if (!fullLocations.contains(c)) {
-            filledLocations.add(c);
+        if (!fullLocations.contains(cells[i][j])) {
+            filledLocations.add(cells[i][j]);
         }
+
         ocs[i][j] = val;
     }
 
     public void setBnd(double[][] x, int b) {
-        for (int[] cs : this.filledLocations) {
-            int i = cs[0];
-            int j = cs[1];
-            setBND(i, j, x, b);
+        for (OccupiedCell c : this.filledLocations) {
+            setBND(c.i, c.j, x, b);
         }
-        for (int[] cs : this.fullLocations) {
-            int i = cs[0];
-            int j = cs[1];
-            setBND2(i, j, x, b);
+        for (OccupiedCell c : this.fullLocations) {
+            setBND2(c.i, c.j, x, b);
+        }
+        if (b == 1) {
+            addXSpeed(x);
+        }
+        if (b == 2) {
+            addYSpeed(x);
         }
     }
 
@@ -220,43 +201,41 @@ public class StaticObjectsField {
                 x[i][j] = (b == 2 ? -x[i][j + 1] : x[i][j + 1]);
                 break;
             case (TR):
-                avg = (x[i][j + 1]+x[i+1][j])/2d;
+                avg = (x[i][j + 1] + x[i + 1][j]) / 2d;
                 x[i][j] = (b == 1 || b == 2) ? -avg : avg;
                 break;
             case (R):
                 x[i][j] = (b == 1 ? -x[i + 1][j] : x[i + 1][j]);
                 break;
             case (BR):
-                avg = (x[i][j - 1]+x[i+1][j])/2d;
+                avg = (x[i][j - 1] + x[i + 1][j]) / 2d;
                 x[i][j] = (b == 1 || b == 2) ? -avg : avg;
                 break;
             case (B):
                 x[i][j] = (b == 2 ? -x[i][j - 1] : x[i][j - 1]);
                 break;
             case (BL):
-                 avg = (x[i][j - 1]+x[i-1][j])/2d;
+                avg = (x[i][j - 1] + x[i - 1][j]) / 2d;
                 x[i][j] = (b == 1 || b == 2) ? -avg : avg;
                 break;
             case (L):
                 x[i][j] = (b == 1 ? -x[i - 1][j] : x[i - 1][j]);
                 break;
             case (TL):
-                 avg = (x[i][j + 1]+x[i-1][j])/2d;
+                avg = (x[i][j + 1] + x[i - 1][j]) / 2d;
                 x[i][j] = (b == 1 || b == 2) ? -avg : avg;
                 break;
 
             default:
-                assert false;
+                assert false : state;
         }
     }
 
-    double[] semiLang(int i, int j, double u, double v, double dt0) {//http://www.cse.yorku.ca/~amana/research/grid.pdf
-        
+    public double[] semiLang(int i, int j, double u, double v, double dt0) {//http://www.cse.yorku.ca/~amana/research/grid.pdf
+
         double x = i - dt0 * u;
         double y = j - dt0 * v;//If the loop does not detect collision, this will be the result
-        
-        
-        
+
         v = -v * dt0;
         u = -u * dt0;//inverse the speed...
         int X = i;
@@ -265,43 +244,64 @@ public class StaticObjectsField {
         //looking for intersections s.t. X+tu = 1/2+k, 0<=t<=1, similar for Y+tv
         int stepX = (int) Math.signum(u);
         int stepY = (int) Math.signum(v);
-        //set to 2 if unreachable
-        double tMaxX = (u==0)?2:Math.abs(1d / (2 * u));//Because we know we start at the center of a cell.. solve i+ut = i+1 or i-1 -> 
-        double tMaxY = (v==0)?2:Math.abs(1d / (2 * v));
-        double tDeltaX = (u==0)?0:1d / Math.abs(u);
-        double tDeltaY =(v==0)?0: 1d / Math.abs(v);
-        int c = 0;
+        double tMaxX = Math.abs(1d / (2 * u));//Because we know we start at the center of a cell.. solve i+ut = i+1 or i-1 -> 
+        double tMaxY = Math.abs(1d / (2 * v));
+        double tDeltaX = 1 / Math.abs(u);
+        double tDeltaY = 1 / Math.abs(v);
         double t = 1;
-        while (X>= 1 && Y>= 1 && X<=N&&Y<=N) {
+        while (X >= 1 && Y >= 1 && X <= N && Y <= N) {
             if (tMaxX < tMaxY) {
-                
-                if(tMaxX >1)break;
-                
+
+                if (tMaxX > 1) {
+                    break;
+                }
+
                 X = X + stepX;
-                if(ocs[X][Y]!=E)
-                {
-                    x = i+tMaxX*u;
-                    y = j+tMaxX*v;
+                if (ocs[X][Y] != E) {
+                    x = i + tMaxX * u;
+                    y = j + tMaxX * v;
                     t = tMaxX;
                     break;
                 }
                 tMaxX = tMaxX + tDeltaX;
             } else {
-                if(tMaxY >1)break;
-                
+                if (tMaxY > 1) {
+                    break;
+                }
+
                 Y = Y + stepY;
-                if(ocs[X][Y]!=E)
-                {
-                    x = i+tMaxY*u;
-                    y = j+tMaxY*v;
+                if (ocs[X][Y] != E) {
+                    x = i + tMaxY * u;
+                    y = j + tMaxY * v;
                     t = tMaxY;
                     break;
                 }
                 tMaxY = tMaxY + tDeltaY;
             }
-             
+
         }
+
         return new double[]{x, y,t};
+    }
+
+    private void addXSpeed(double[][] x) {
+        for(OccupiedCell c:filledLocations)
+        {
+            x[c.i][c.j]+=c.vx;
+        }for(OccupiedCell c:fullLocations)
+        {
+            x[c.i][c.j]+=c.vy;
+        }
+    }
+
+    private void addYSpeed(double[][] x) {
+        for(OccupiedCell c:filledLocations)
+        {
+            x[c.i][c.j]+=c.vy;
+        }for(OccupiedCell c:fullLocations)
+        {
+            x[c.i][c.j]+=c.vy;
+        }
     }
 
 }

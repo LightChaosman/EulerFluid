@@ -22,7 +22,7 @@ public class MouseSpring implements Force{
     public void addForces() {
         if(body==null)return;
         double tx = body.x+bbx*body.Rxx+bby*body.Rxy;
-        double ty = body.y+bby*body.Ryx+bby*body.Ryy;
+        double ty = body.y+bbx*body.Ryx+bby*body.Ryy;
         double dx = x-tx;
         double dy = y-ty;
         double Fix = dx*k;

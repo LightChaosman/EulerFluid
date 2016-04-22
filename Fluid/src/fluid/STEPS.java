@@ -1,5 +1,8 @@
 package fluid;
 
+import java.util.Arrays;
+import rigids.RigidBodies;
+
 
 /**
  *
@@ -24,26 +27,26 @@ public class STEPS {
         }
     }
 
-    public static void diffuse(int b, double[][] x, double[][] x0, double diff, double dt, StaticObjectsField so) {
+    public static void diffuse(int b, double[][] x, double[][] x0, double diff, double dt, StaticObjectsField so,RigidBodies rb) {
         assert x0.length == x.length;
         assert x0[0].length == x0.length;
         assert x[0].length == x.length;
         assert x.length >= 2;
         int N = x.length - 2;
         double a = dt * diff * N * N;
-        for (int k = 0; k < 50; k++) {
+        for (int k = 0; k < 20; k++) {
             for (int i = N; i >= 1; i--) {
                 for (int j = 1; j <= N; j++) {
-                    if(so.ocs[i][j]!=so.E)continue;//Cells that are occupied don't need to diffuse -> this is probably faster than maintaining free cells and only iterating over those
+                    if(so.ocs[i][j]!=so.E|| rb.field.ocs[i][j]!=rb.field.E)continue;//Cells that are occupied don't need to diffuse -> this is probably faster than maintaining free cells and only iterating over those
                     x[i][j] = (x0[i][j] + a * (x[i - 1][j] + x[i + 1][j]
                             + x[i][j - 1] + x[i][j + 1])) / (1 + 4 * a);
                 }
             }
-            set_bnd(b, x, so);
+            set_bnd(b, x, so,rb);
         }
     }
 
-    public static void advect(int b, double[][] d, double[][] d0, double[][] u, double[][] v, double dt, StaticObjectsField so) {
+    public static void advect(int b, double[][] d, double[][] d0, double[][] u, double[][] v, double dt, StaticObjectsField so, RigidBodies rb) {
         assert d.length == d.length;
         assert d0[0].length == d0.length;
         assert d[0].length == d.length;
@@ -56,11 +59,19 @@ public class STEPS {
 
         for (i = 1; i <= N; i++) {
             for (j = 1; j <= N; j++) {
-                if(so.ocs[i][j]!=so.E)continue;//optimization. Values would be overwritten by boundary conditions after loop ends
-                
+                if(so.ocs[i][j]!=so.E|| rb.field.ocs[i][j]!=rb.field.E)continue;//optimization. Values would be overwritten by boundary conditions after loop ends
+                assert v[i][j]!=Double.NaN;
                 double[] fixxed = so.semiLang(i,j,u[i][j],v[i][j],dt0);
-                x = fixxed[0];
-                y = fixxed[1];
+                double[] fixxed2 = rb.field.semiLang(i, j, u[i][j], v[i][j], dt0);
+                if(fixxed[2]<fixxed2[2])
+                {
+                    x = fixxed[0];
+                    y = fixxed[1];
+                }else
+                {
+                    x = fixxed2[0];
+                    y = fixxed2[1];
+                }
                 i0 = (int) x;
                 i1 = i0 + 1;
                 j0 = (int) y;
@@ -73,13 +84,14 @@ public class STEPS {
                         + s1 * (t0 * d0[i1][j0] + t1 * d0[i1][j1]);
             }
         }
-        set_bnd(b, d, so);
+        set_bnd(b, d, so,rb);
     }
 
-    public static void set_bnd(int b, double[][] x, StaticObjectsField so) {
+    public static void set_bnd(int b, double[][] x, StaticObjectsField so,RigidBodies rb) {
         assert x.length == x[0].length;
         int N = x.length - 2;
         so.setBnd(x, b);
+        rb.field.setBnd(x, b);
         switch (bndmode) {
             case 0:
                 for (int i = 1; i <= N; i++) {
@@ -104,7 +116,7 @@ public class STEPS {
         x[N + 1][N + 1] = 0.5 * (x[N][N + 1] + x[N + 1][N]);
     }
 
-    public static void project(double[][] u, double[][] v, double[][] p, double[][] div, StaticObjectsField so) {
+    public static void project(double[][] u, double[][] v, double[][] p, double[][] div, StaticObjectsField so,RigidBodies rb) {
         //imperfect... wall one end of wind tunnel scenario and it becomes quitte obvious that the vector field does not become divergence free... Every cell has more incoming than it has outgoing + backwards euler = decrease of mass!
         int N = u.length - 2;
         int i, j, k;
@@ -112,14 +124,14 @@ public class STEPS {
         h = 1.0 / N;
         for (i = 1; i <= N; i++) {
             for (j = 1; j <= N; j++) {
-                if(so.ocs[i][j]!=so.E)continue;
+                if(so.ocs[i][j]!=so.E || rb.field.ocs[i][j]!=rb.field.E)continue;
                 div[i][j] = -0.5 * h * (u[i + 1][j] - u[i - 1][j]
                         + v[i][j + 1] - v[i][j - 1]);
                 p[i][j] = 0;
             }
         }
-        set_bnd(0, div, so);
-        set_bnd(0, p, so);
+        set_bnd(0, div, so,rb);
+        set_bnd(0, p, so,rb);
         for (k = 0; k < 20; k++) {
             for (i = 1; i <= N; i++) {
                 for (j = 1; j <= N; j++) {
@@ -128,7 +140,7 @@ public class STEPS {
                             + p[i][j - 1] + p[i][j + 1]) / 4;
                 }
             }
-            set_bnd(0, p, so);
+            set_bnd(0, p, so,rb);
         }
         for (i = 1; i <= N; i++) {
             for (j = 1; j <= N; j++) {
@@ -137,8 +149,8 @@ public class STEPS {
                 v[i][j] -= 0.5 * (p[i][j + 1] - p[i][j - 1]) / h;
             }
         }
-        set_bnd(1, u, so);
-        set_bnd(2, v, so);
+        set_bnd(1, u, so,rb);
+        set_bnd(2, v, so,rb);
     }
 
     /**
@@ -185,6 +197,13 @@ public class STEPS {
                 resu[i][j] += epsilon * h * NXomegax;
                 resv[i][j] += epsilon * h * NXomegay;
             }
+        }
+    }
+    
+    public static void printField(double[][] field)
+    {
+        for (double[] field1 : field) {
+            System.out.println(Arrays.toString(field1));
         }
     }
 

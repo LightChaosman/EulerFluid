@@ -17,6 +17,7 @@ import java.util.HashMap;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
+import rigids.OccupiedCell;
 import rigids.forces.MouseSpring;
 
 /*
@@ -42,6 +43,8 @@ public class GUI extends javax.swing.JFrame {
     double fps = 0;
     boolean middle = false;
     boolean splus = false, smin = false;
+    boolean cdown = false;
+    byte drawRigidBounds = 0;
 
     RigidBody dragging = null, pdragging;
     double[] dragloc, pdragloc;
@@ -73,7 +76,6 @@ public class GUI extends javax.swing.JFrame {
                             double[][] u = new double[s.N + 2][s.N + 2];
                             double[][] v = new double[s.N + 2][s.N + 2];
                             if (pressing && !handled && dragging == null) {
-                                System.out.println(splus + " " + smin);
                                 if (splus) {
                                     s.rho.incSource(intern.x, intern.y);
                                 } else if (smin) {
@@ -110,7 +112,6 @@ public class GUI extends javax.swing.JFrame {
                     ex.printStackTrace();
                     return null;
                 }
-
             }
 
             private void AddMouseForces(double[][] u, double[][] v) {
@@ -136,6 +137,8 @@ public class GUI extends javax.swing.JFrame {
 
         };
         sw.execute();
+
+        
 
     }
 
@@ -227,67 +230,83 @@ public class GUI extends javax.swing.JFrame {
             this.addKeyListener(this);
         }
 
+        private int N;
+        private int cellWidth;
+        private int cellHeight;
+        private double h;
+        private double h2;
+        Graphics2D g;
+
+        void fillCell(int i, int j, Color c) {
+            g.setColor(c);
+            g.fillRect(getCellTopLeftX(i, j), getCellTopLeftY(i, j), cellWidth, cellHeight);
+        }void drawCell(int i, int j, Color c) {
+            g.setColor(c);
+            g.drawRect(getCellTopLeftX(i, j), getCellTopLeftY(i, j), cellWidth, cellHeight);
+        }void drawCell(int i, int j, Color c,String s) {
+            g.setColor(c);
+            g.drawRect(getCellTopLeftX(i, j), getCellTopLeftY(i, j), cellWidth, cellHeight);
+            g.setColor(Color.WHITE);
+            g.drawString(s, getCellTopLeftX(i,j)+2, getCellTopLeftY(i,j)+cellHeight-1);
+        }
+
+        int getCellCenterX(int i, int j) {
+            return (int) (((i - 1) + .5) / N * this.getWidth());
+        }
+
+        int getCellCenterY(int i, int j) {
+            return (int) (((j - 1) + .5) / N * this.getHeight());
+        }
+
+        int getCellTopLeftX(int i, int j) {
+            return (int) (((i - 1d)) / N * this.getWidth());
+        }
+
+        int getCellTopLeftY(int i, int j) {
+            return (int) (((j - 1d)) / N * this.getHeight());
+        }
+
+        int convertXtoInt(double x) {
+            return (int) ((x + h2) * this.getWidth());
+        }
+
+        int convertYtoInt(double y) {
+            return (int) ((y + h2) * this.getHeight());
+        }
+
         @Override
         public void paint(Graphics g) {
             super.paint(g); //To change body of generated methods, choose Tools | Templates.
+            this.g = (Graphics2D) g;
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, this.getWidth(), this.getHeight());
-            int N = s.N;
-            int i0 = 0, j0 = 0;//i0=i-1, j0=j-1
-            double dw = (double) this.getWidth() / s.N;
-            double dh = (double) this.getHeight() / s.N;
-            int dw2 = (int) dw;
-            int dh2 = (int) dh;
-            if (true) {
-                drawCells(dw, i0, dh, j0, g, dw2, dh2);
-            } else {
-                drawNice(g);
-            }
+            N = s.N;
+            h = 1d / N;
+            h2 = 1d / (2d * N);
+            cellWidth = this.getWidth() / N + 1;
+            cellHeight = this.getHeight() / N + 1;
 
-            i0 = 0;
-            j0 = 0;
+            drawCells();
+
             if (showVecField) {
-                drawVelocities(dw, i0, dh, j0, g);
+                drawVelocities();
             }
-            drawRigidBodies(g);
+            drawFixedSolids();
+            drawRigidBodies();
             g.setColor(Color.WHITE);
-            String guide2 = buildGuide();
-            drawString(g, guide2, 5, this.getHeight() - (g.getFontMetrics().getHeight() * (guide2.split("\n").length) + 5));
+            String guide2 = buildGuide(cdown);
+            drawString(guide2, 5, this.getHeight() - (g.getFontMetrics().getHeight() * (guide2.split("\n").length) + 5));
         }
 
-        void drawString(Graphics g, String text, int x, int y) {
+        void drawString(String text, int x, int y) {
             for (String line : text.split("\n")) {
                 g.drawString(line, x, y += g.getFontMetrics().getHeight());
             }
         }
 
-        private void drawVelocities(double dw, int i0, double dh, int j0, Graphics g) {
+        private void drawCells() {
             for (int i = 1; i <= s.N; i++) {
                 for (int j = 1; j <= s.N; j++) {
-
-                    g.setColor(Color.RED);
-                    double u = s.u.u[i][j];
-                    double v = s.u.v[i][j];
-                    int centerx = (int) (dw * i0 + dw / 2d);
-                    int centery = (int) (dh * j0 + dh / 2d);
-                    int endx = (int) (centerx + getWidth() * u);
-                    int endy = (int) (centery + getHeight() * v);
-                    g.drawLine(centerx, centery, endx, endy);
-
-                    j0 = j;
-                }
-                j0 = 0;
-                i0 = i;
-            }
-        }
-
-        private void drawCells(double dw, int i0, double dh, int j0, Graphics g, int dw2, int dh2) {
-            for (int i = 1; i <= s.N; i++) {
-                for (int j = 1; j <= s.N; j++) {
-
-                    int x0 = (int) (dw * i0);
-                    int y0 = (int) (dh * j0);
-
                     double rho = s.rho.field[i][j];
                     double rho2 = Math.max(Math.min(1, rho), 0);
                     double rho3 = Math.max(Math.min(1, rho - 1), 0);
@@ -297,47 +316,33 @@ public class GUI extends javax.swing.JFrame {
                     double rho7 = Math.max(Math.min(1, rho - 5), 0);
                     double rho8 = Math.max(Math.min(1, rho - 6), 0);
                     Color c = new Color((int) ((rho5) * 255), (int) ((rho2 - rho4 + rho7) * 255), (int) ((rho3 - rho6 + rho8) * 255));
-                    g.setColor(c);
-                    g.fillRect(x0, y0, dw2 + 1, dh2 + 1);
-                    if (s.so.ocs[i][j] != 0) {
-                        g.setColor(Color.BLUE);
-                        g.fillRect(x0, y0, dw2 + 1, dh2 + 1);
-                        g.setColor(Color.WHITE);
-                        g.drawString(s.so.ocs[i][j] + "", x0, y0 + (int) dh);
-                    }
-                    if (s.rho.permsources[i][j] > 0) {
-                        g.setColor(Color.DARK_GRAY);
-                        ((Graphics2D) g).setStroke(new BasicStroke(2f));
-                        g.drawRect(x0, y0, dw2 + 1, dw2 + 1);
-
-                        ((Graphics2D) g).setStroke(new BasicStroke(1f));
-                    }
-
-                    j0 = j;
+                    fillCell(i, j, c);
                 }
-                j0 = 0;
-                i0 = i;
             }
         }
 
-        private void drawNice(Graphics g) {
-            for (int x = 0; x < this.getWidth(); x++) {
-                for (int y = 0; y < this.getHeight(); y++) {
-                    double intx = ((double) x / (this.getWidth())) * (s.N - 1) + 1; //[1..N]
-                    double inty = ((double) y / (this.getHeight())) * (s.N - 1) + 1;
-                    int x0 = (int) intx;
-                    int x1 = x0 + 1;
-                    int y0 = (int) inty;
-                    int y1 = y0 + 1;
-                    double dx = x1 - intx;
-                    double dy = y1 - inty;
-                    double dx2 = 1 - dx;
-                    double dy2 = 1 - dy;
-                    double rho = s.rho.field[x0][y0] * dx * dy + s.rho.field[x1][y0] * dx2 * dy + s.rho.field[x0][y1] * dx * dy2 + s.rho.field[x1][y1] * dx2 * dy2;
-                    rho = Math.max(Math.min(1, rho * 10), 0);
-                    Color c = new Color(0, (int) (rho * 255), 0);
-                    g.setColor(c);
-                    g.fillRect(x, y, 1, 1);
+        private void drawFixedSolids() {
+            for (int i = 1; i <= N; i++) {
+                for (int j = 1; j <= N; j++) {
+                    if (s.so.ocs[i][j] != 0) {
+                        fillCell(i, j, Color.BLUE);
+                    }
+                }
+            }
+        }
+
+        private void drawVelocities() {
+            for (int i = 1; i <= N; i++) {
+                for (int j = 1; j <= N; j++) {
+
+                    g.setColor(Color.RED);
+                    double u = s.u.u[i][j];
+                    double v = s.u.v[i][j];
+                    int centerx = getCellCenterX(i, j);
+                    int centery = getCellCenterY(i, j);
+                    int endx = (int) (centerx + getWidth() * u/2);
+                    int endy = (int) (centery + getHeight() * v/2);
+                    g.drawLine(centerx, centery, endx, endy);
                 }
             }
         }
@@ -346,6 +351,80 @@ public class GUI extends javax.swing.JFrame {
             int x = (int) Math.floor((float) mouse.x * s.N / this.getWidth()) + 1;
             int y = (int) Math.floor((float) mouse.y * s.N / this.getHeight()) + 1;
             return new Point(Math.min(s.N, Math.max(1, x)), Math.min(s.N, Math.max(1, y)));
+        }
+
+        private void drawRigidBodies() {
+            
+            for (RigidBody b : s.rbodies.bodies) {
+                if(drawRigidBounds==3){for (OccupiedCell oc : b.getOutsideCells()) {
+                    drawCell(oc.i, oc.j, Color.PINK,""+s.rbodies.field.ocs[oc.i][oc.j]);
+                }}if(drawRigidBounds ==1){for (OccupiedCell oc : b.getOccupiedCells()) {
+                    drawCell(oc.i, oc.j, Color.CYAN,""+s.rbodies.field.ocs[oc.i][oc.j]);
+                }}else if(drawRigidBounds>=2){for (OccupiedCell oc : b.getOccupiedCells()) {
+                    fillCell(oc.i, oc.j, Color.CYAN/*,""+s.rbodies.field.ocs[oc.i][oc.j]*/);
+                }}
+            }
+            
+            
+            Color c = Color.YELLOW;
+            g.setColor(c);
+
+            for (RigidBody r : s.rbodies.bodies) {
+                Polygon p = r.tp;
+                int[] xs = new int[p.pxs.length];
+                int[] ys = new int[p.pxs.length];
+                for (int i = 0; i < xs.length; i++) {
+                    xs[i] = convertXtoInt(p.pxs[i]);
+                    ys[i] = convertYtoInt(p.pys[i]);
+                }
+                java.awt.Polygon p2 = new java.awt.Polygon(xs, ys, xs.length);
+                if(drawRigidBounds%2==0){g.fillPolygon(p2);}else{g.drawPolygon(p2);}
+                polymap.put(r, p2);
+                int cx = (int) (this.getWidth() * r.x);
+                int cy = (int) (this.getHeight() * r.y);
+                int dvy = (int) (this.getHeight() * r.vy);
+                int dvx = (int) (this.getWidth() * r.vx);
+                int dFy = (int) (this.getHeight() * r.Fy * 100);
+                int dFx = (int) (this.getWidth() * r.Fx * 100);
+                g.setColor(Color.BLUE);
+                g.drawLine(cx, cy, cx + dvx, cy + dvy);
+                g.setColor(Color.GREEN);
+                g.drawLine(cx, cy, cx + dFx, cy + dFy);
+            }
+
+            
+
+            if (dragging != null) {
+                double x = dragging.x + dragloc[0] * dragging.Rxx + dragloc[1] * dragging.Rxy;
+                double y = dragging.y + dragloc[0] * dragging.Ryx + dragloc[1] * dragging.Ryy;
+                ((Graphics2D) g).setStroke(new BasicStroke(2f));
+                g.setColor(Color.PINK);
+                g.drawLine(loc.x, loc.y, (int) ((x + h2) * this.getWidth()), (int) ((y + h2) * this.getHeight()));
+                ((Graphics2D) g).setStroke(new BasicStroke(1f));
+            }
+        }
+
+        private String buildGuide(boolean show) {
+            String s2;
+            if (show) {
+                s2 = "Controls:\n"
+                        + "Click anywhere to add 'smoke'\n"
+                        + "Click anywhere while holding CTRL to place solid walls\n"
+                        + "Click anywhere while holding SHIFT to exert a force on the fluid\n"
+                        + "Click on a moving solid to drag it around\n"
+                        + "Right click anywhere to reestablish the last connection to a rigid body\n"
+                        + "Play with SHIFT + middle mouse button for fun\n"
+                        + "Press SPACE to toggle simulation on/off\n"
+                        + "Press V to toggle the rendering of the vector field: " + (showVecField ? "ON" : "OFF") + "\n"
+                        + "Press M to toggle wind-tunnel mode: " + ((STEPS.bndmode == 1) ? "ON" : "OFF") + "\n"
+                        + "Press N to enable toggle density conservation: " + (s.norm ? "ON" : "OFF") + "\n"
+                        + "Press B to cycle through rigig body drawing options\n"
+                        + "Press +/- to toggle increase/decrease permanent source: " + (splus ? "ON/" : "OFF/") + (smin ? "ON" : "OFF");
+            } else {
+                s2 = "Hold C to show controls";
+            }
+            return s2 + "\nfps: " + fps + "\nTotal mass in system: " + s.rho.mass;
+
         }
 
         @Override
@@ -370,11 +449,11 @@ public class GUI extends javax.swing.JFrame {
                 middle = true;
 
             } else {
-                for (int i = 0; i < s.rbodies.bodies.length; i++) {
-                    if (polymap.containsKey(s.rbodies.bodies[i]) && polymap.get(s.rbodies.bodies[i]).contains(e.getPoint())) {
-                        dragging = s.rbodies.bodies[i];
-                        double intx = (double) e.getPoint().x / this.getWidth();
-                        double inty = (double) e.getPoint().y / this.getHeight();
+                for (RigidBody body : s.rbodies.bodies) {
+                    if (polymap.containsKey(body) && polymap.get(body).contains(e.getPoint())) {
+                        dragging = body;
+                        double intx = (double) e.getPoint().x / this.getWidth() - 1d / (2 * s.N);
+                        double inty = (double) e.getPoint().y / this.getHeight() - 1d / (2 * s.N);
                         intx -= dragging.x;
                         inty -= dragging.y;
                         double locx = intx * Math.cos(-dragging.theta) + inty * (-Math.sin(-dragging.theta));
@@ -466,6 +545,11 @@ public class GUI extends javax.swing.JFrame {
                         smin = false;
                     }
                     break;
+                case KeyEvent.VK_C:
+                    cdown = true;
+                    break;
+                case KeyEvent.VK_B:
+                    drawRigidBounds=(byte)((drawRigidBounds+1)%4);
                 default:
                     break;
             }
@@ -480,63 +564,12 @@ public class GUI extends javax.swing.JFrame {
                 case KeyEvent.VK_SHIFT:
                     shift = false;
                     break;
-
+                case KeyEvent.VK_C:
+                    cdown = false;
+                    break;
                 default:
                     break;
             }
-        }
-
-        private void drawRigidBodies(Graphics g) {
-            Color c = Color.YELLOW;
-            g.setColor(c);
-            for (RigidBody r : s.rbodies.bodies) {
-                Polygon p = r.p;
-                int[] xs = new int[p.pxs.length];
-                int[] ys = new int[p.pxs.length];
-                for (int i = 0; i < xs.length; i++) {
-                    double rx = p.pxs[i] * r.Rxx + p.pys[i] * r.Rxy;
-                    double ry = p.pxs[i] * r.Ryx + p.pys[i] * r.Ryy;
-                    xs[i] = (int) ((rx + r.x) * this.getWidth());
-                    ys[i] = (int) ((ry + r.y) * this.getHeight());
-                }
-                java.awt.Polygon p2 = new java.awt.Polygon(xs, ys, xs.length);
-                g.fillPolygon(p2);
-                polymap.put(r, p2);
-                int cx = (int) (this.getWidth() * r.x);
-                int cy = (int) (this.getHeight() * r.y);
-                int dvy = (int) (this.getHeight() * r.vy);
-                int dvx = (int) (this.getWidth() * r.vx);
-                int dFy = (int) (this.getHeight() * r.Fy * 100);
-                int dFx = (int) (this.getWidth() * r.Fx * 100);
-                g.setColor(Color.BLUE);
-                g.drawLine(cx, cy, cx + dvx, cy + dvy);
-                g.setColor(Color.GREEN);
-                g.drawLine(cx, cy, cx + dFx, cy + dFy);
-            }
-
-            if (dragging != null) {
-                double x = dragging.x + dragloc[0] * dragging.Rxx + dragloc[1] * dragging.Rxy;
-                double y = dragging.y + dragloc[0] * dragging.Ryx + dragloc[1] * dragging.Ryy;
-                ((Graphics2D) g).setStroke(new BasicStroke(2f));
-                g.setColor(Color.PINK);
-                g.drawLine(loc.x, loc.y, (int) (x * this.getWidth()), (int) (y * this.getHeight()));
-                ((Graphics2D) g).setStroke(new BasicStroke(1f));
-            }
-        }
-
-        private String buildGuide() {
-            return "Controls:\n"
-                    + "Click anywhere to add 'smoke'\n"
-                    + "Click anywhere while holding CTRL to place solid walls\n"
-                    + "Click anywhere while holding SHIFT to exert a force on the fluid\n"
-                    + "Click on a moving solid to drag it around\n"
-                    + "Right click anywhere to reestablish the last connection to a rigid body\n"
-                    + "Play with SHIFT + middle mouse button for fun\n"
-                    + "Press SPACE to toggle simulation on/off\n"
-                    + "Press V to toggle the rendering of the vector field: " + (showVecField ? "ON" : "OFF") + "\n"
-                    + "Press M to toggle wind-tunnel mode: " + ((STEPS.bndmode == 1) ? "ON" : "OFF") + "\n"
-                    + "Press N to enable toggle density conservation: " + (s.norm ? "ON" : "OFF") + "\n"
-                    + "Press +/- to toggle increase/decrease permanent source: " +(splus?"ON/":"OFF/") +(smin?"ON":"OFF")+ "\nfps: " + fps + "\nTotal mass in system: " + s.rho.mass;
         }
 
     }

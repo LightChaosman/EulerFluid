@@ -1,5 +1,7 @@
 package fluid;
 
+import rigids.RigidBodies;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -32,7 +34,7 @@ public class DensityField {
    
 
     public void dens_step(double[][] source, double[][] u, double[][] v, double diff,
-            double dt, StaticObjectsField so, boolean renormalize) {
+            double dt, StaticObjectsField so, boolean renormalize,RigidBodies rb) {
         double[][] x = field;
         double[][] x0 = source;//readability
         double[][] temp;
@@ -43,26 +45,25 @@ public class DensityField {
         temp = x0;
         x0 = x;
         x = temp;
-        STEPS.diffuse(3, x, x0, diff, dt,so);
+        STEPS.diffuse(3, x, x0, diff, dt,so,rb);
         temp = x0;
         x0 = x;
         x = temp;
-        STEPS.advect(3, x, x0, u, v, dt,so);
-        if(renormalize && mass>0)
+        STEPS.advect(3, x, x0, u, v, dt,so,rb);
+        if(renormalize && mass>0 )
         {
             double s = 0;
             for(int i = 1; i <= N; i++)for(int j = 1; j <= N;j++)s+=x[i][j]*(so.ocs[i][j]==so.E?1:0);
             double fact = (mass)/(s);
             if(s>0){
             for(int i = 1; i <= N; i++)for(int j = 1; j <= N;j++)x[i][j]=x[i][j]*fact;
-            STEPS.set_bnd(3, x, so);}
+            STEPS.set_bnd(3, x, so,rb);}
         }
         field = x;
     }
     
     public void incSource(int i, int j)
     {
-        System.out.println("adding...");
         permsources[i][j] = Math.min(100, permsources[i][j]+1);
     }
     public void decSource(int i, int j)
