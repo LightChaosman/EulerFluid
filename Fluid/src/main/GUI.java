@@ -22,13 +22,9 @@ import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 import rigids.OccupiedCell;
 import rigids.forces.MouseSpring;
-
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 /**
+ * Very messy I/O and GUI handling class
+ * Just take it at face value...
  *
  * @author Helmond
  */

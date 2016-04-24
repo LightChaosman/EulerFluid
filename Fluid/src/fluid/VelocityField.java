@@ -4,11 +4,6 @@ import rigids.OccupiedCell;
 import rigids.RigidBodies;
 import rigids.RigidBody;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 /**
  * A two dimensional vector field. That is, R^2->R^2
  *
@@ -38,25 +33,15 @@ public class VelocityField {
         double[][] rigidSourceY = convertToRigidSourceY(rb,v);
         STEPS.addSource(u, dt, u0, rigidSourceX);
         STEPS.addSource(v, dt, v0, rigidSourceY);
-        assert inv(u);
-        assert inv(v);
         temp = u0;
         u0 = u;
         u = temp;
         STEPS.diffuse(1, u, u0, visc, dt, so, rb);
-        assert inv(u);
-        assert inv(v);
         temp = v0;
         v0 = v;
         v = temp;
         STEPS.diffuse(2, v, v0, visc, dt, so, rb);
-        
-        assert inv(u);
-        assert inv(v);
         STEPS.project(u, v, u0, v0, so, rb);
-        
-        assert inv(u);
-        assert inv(v);
         temp = u0;
         u0 = u;
         u = temp;
@@ -64,28 +49,14 @@ public class VelocityField {
         v0 = v;
         v = temp;
         STEPS.advect(1, u, u0, u0, v0, dt, so, rb);
-        assert inv(u);
-        assert inv(v);
         STEPS.advect(2, v, v0, u0, v0, dt, so, rb);
         
-        assert inv(u);
-        assert inv(v);
-        STEPS.project(u, v, u0, v0, so, rb);//*/
+        STEPS.project(u, v, u0, v0, so, rb);
         
-        assert inv(u);
-        assert inv(v);
         this.u = u;
         this.v = v;
     }
 
-    private boolean inv(double[][] u1) {
-        for (int i = 0; i <= N+1; i++) {
-            for (int j = 0; j<= N+1; j++) {
-                assert !Double.isNaN(u1[i][j]);
-            }
-        }
-        return true;
-    }
 
     private double[][] convertToRigidSourceX(RigidBodies rb, double[][] u) {
         double[][] force = new double[N+2][N+2];

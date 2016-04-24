@@ -6,7 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- *
+ *Implementation of a 2D lagrangian rigid body. Based on Baraffs work
+ * 
  * @author Helmond
  */
 public class RigidBody {
@@ -15,7 +16,7 @@ public class RigidBody {
 
     /*Constant quantities*/
     public double M;//mass
-    public double I;//Inertia tensor........TODO?
+    public double I;//Inertia tensor
     public Polygon p;//The actual body
 
     /* State variables */

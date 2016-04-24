@@ -60,7 +60,7 @@ public class RigidBodies {
      */
     private void dxdt2(double t, double[] x, double[] xdot, Simulation s) {
         ArrayToBodies(bodies, x);
-        s.ComputeForceAndTorque(t);//TODO!!!
+        s.ComputeForceAndTorque(t);
         for (int i = 0; i < bodies.length; i++) {
             DdtStateToArray(xdot, i * ENTRIES_PER_BODY, bodies[i]);
         }
@@ -107,7 +107,7 @@ public class RigidBodies {
     private static void DdtStateToArray(double[] xdot, int offset, RigidBody body) {
         xdot[offset] = body.vx;
         xdot[offset + 1] = body.vy;
-        xdot[offset + 2] = body.omega;//scale?
+        xdot[offset + 2] = body.omega;
         xdot[offset + 3] = body.Fx;
         xdot[offset + 4] = body.Fy;
         xdot[offset + 5] = body.tau;

@@ -1,14 +1,9 @@
 package rigids;
 
-import fluid.*;
 import java.util.HashSet;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 /**
+ * The analog of staticobjectfield. This one handles the boundaries of the rigid bodies.
  *
  * @author Helmond
  */
