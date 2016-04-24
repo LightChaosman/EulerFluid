@@ -54,10 +54,10 @@ public class RigidBody {
     
     public static RigidBody fan(double cx, double cy, double r) {
         RigidBody rb = new RigidBody();
-        Polygon p = Polygon.fan(3, r);
+        Polygon p = Polygon.fan(4, r);
         rb.p = p;
-        rb.M = 100;
-        rb.I = 1;//for this specific case...
+        rb.M = 10000;
+        rb.I = .05;//for this specific case...
         rb.x = cx;
         rb.y = cy;
         rb.setAuxs();

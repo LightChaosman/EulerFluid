@@ -152,10 +152,12 @@ public class MovingObjectsField {
 
     public void setBnd(double[][] x, int b) {
         for (OccupiedCell c : this.filledLocations) {
-            setBND(c.i, c.j, x, b);
+            if(b==3){setBND(c.i, c.j, x, b);}else{x[c.i][c.j]=0;}
+            
         }
         for (OccupiedCell c : this.fullLocations) {
-            setBND2(c.i, c.j, x, b);
+            if(b==3){setBND2(c.i, c.j, x, b);}else{x[c.i][c.j]=0;}
+            
         }
         if (b == 1) {
             addXSpeed(x);

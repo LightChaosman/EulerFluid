@@ -1,5 +1,7 @@
 package rigids;
 
+import java.util.Arrays;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -46,7 +48,8 @@ public class Polygon {
     
     public static Polygon fan(int blades, double radius)
     {
-        double[] pxs = new double[blades*4],pys = new double[blades*6];
+        final int POINTSPERBLADE=4;
+        double[] pxs = new double[blades*POINTSPERBLADE],pys = new double[blades*POINTSPERBLADE];
         for(int i = 0; i < blades; i++)
         {
             double a = 2*Math.PI/blades * i;
@@ -58,15 +61,17 @@ public class Polygon {
             double cos2 = Math.cos(a2);
             double r1 = radius/10;
             double r2 = radius;
-            pxs[i*blades+0] = sin1*r1;
-            pxs[i*blades+1] = sin1*r2;
-            pxs[i*blades+2] = sin2*r2;
-            pxs[i*blades+3] = sin2*r1;
-            pys[i*blades+0] = cos1*r1;
-            pys[i*blades+1] = cos1*r2;
-            pys[i*blades+2] = cos2*r2;
-            pys[i*blades+3] = cos2*r1;
+            pxs[i*4+0] = sin1*r1;
+            pxs[i*POINTSPERBLADE+1] = sin1*r2;
+            pxs[i*POINTSPERBLADE+2] = sin2*r2;
+            pxs[i*POINTSPERBLADE+3] = sin2*r1;
+            pys[i*POINTSPERBLADE+0] = cos1*r1;
+            pys[i*POINTSPERBLADE+1] = cos1*r2;
+            pys[i*POINTSPERBLADE+2] = cos2*r2;
+            pys[i*POINTSPERBLADE+3] = cos2*r1;
         }
+        System.out.println(Arrays.toString(pxs));
+        System.out.println(Arrays.toString(pys));
         return new Polygon(pxs, pys);
     }
 

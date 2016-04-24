@@ -25,7 +25,7 @@ public class INITIALS {
         RigidBody rb = RigidBody.tiltedSquare(0, .1, .5+0.2, .5+0);
         RigidBody rb2 = RigidBody.tiltedSquare(0, .1, .5-0.2, .5+0);
         rb.Px = 0.000000001;
-        rb2.Px = 0.000000001;
+        //rb2.Px = 0.000000001;
         //rb.L = -.00001;
         
         RigidBody[] rbs = new RigidBody[]{rb,rb2};
@@ -55,7 +55,7 @@ public class INITIALS {
         double scale = 1;
         RigidBody rb = RigidBody.fan(.5,.5,.3);
         rb.Px = 0.001;
-        rb.L = -.25;
+        rb.L = .025;
         
         RigidBody[] rbs = new RigidBody[]{rb};
         //rbs = new RigidBody[]{};

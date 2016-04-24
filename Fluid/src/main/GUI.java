@@ -36,7 +36,7 @@ public class GUI extends javax.swing.JFrame {
 
     private HashMap<RigidBody, java.awt.Polygon> polymap = new HashMap<>();
 
-    private final Simulation s;
+    private Simulation s;
     boolean running;
 
     boolean pressing = false;
@@ -59,9 +59,9 @@ public class GUI extends javax.swing.JFrame {
     /**
      * Creates new form GUI
      */
-    public GUI(Simulation s) {
+    public GUI(Simulation s2) {
         initComponents();
-        this.s = s;
+        this.s = s2;
         SwingWorker sw = new SwingWorker() {
             Exception e;
 
@@ -225,7 +225,7 @@ public class GUI extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new GUI(INITIALS.GRAVITY()).setVisible(true);
+                new GUI(INITIALS.FAN()).setVisible(true);
 
             }
         });
@@ -412,8 +412,8 @@ public class GUI extends javax.swing.JFrame {
                 int cy = (int) (this.getHeight() * r.y);
                 int dvy = (int) (this.getHeight() * r.vy);
                 int dvx = (int) (this.getWidth() * r.vx);
-                int dFy = (int) (this.getHeight() * r.Fy * 100);
-                int dFx = (int) (this.getWidth() * r.Fx * 100);
+                int dFy = (int) (this.getHeight() * r.Fy * 1000);
+                int dFx = (int) (this.getWidth() * r.Fx * 1000);
                 g.setColor(Color.BLUE);
                 g.drawLine(cx, cy, cx + dvx, cy + dvy);
                 g.setColor(Color.GREEN);
@@ -445,6 +445,7 @@ public class GUI extends javax.swing.JFrame {
                         + "Press M to toggle wind-tunnel mode: " + ((STEPS.bndmode == 1) ? "ON" : "OFF") + "\n"
                         + "Press N to enable toggle density conservation: " + (s.norm ? "ON" : "OFF") + "\n"
                         + "Press B to cycle through rigig body drawing options\n"
+                        + "Press 1/2 to switch between initial states\n"
                         + "Press +/- to toggle increase/decrease permanent source: " + (splus ? "ON/" : "OFF/") + (smin ? "ON" : "OFF");
             } else {
                 s2 = "Hold C to show controls";
@@ -579,6 +580,13 @@ public class GUI extends javax.swing.JFrame {
                     break;
                 case KeyEvent.VK_B:
                     drawRigidBounds = (byte) ((drawRigidBounds + 1) % 4);
+                    break;
+                case KeyEvent.VK_1:
+                    s = INITIALS.GRAVITY();
+                    break;
+                case KeyEvent.VK_2:
+                    s = INITIALS.FAN();
+                    break;
                 default:
                     break;
             }
