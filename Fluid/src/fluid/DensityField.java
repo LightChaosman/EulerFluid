@@ -64,6 +64,6 @@ public class DensityField {
     {
         permsources[i][j] = Math.max(0, permsources[i][j]-1);
     }
-
+ 
     
 }

@@ -132,7 +132,7 @@ public class STEPS {
         }
         set_bnd(0, div, so,rb);
         set_bnd(0, p, so,rb);
-        for (k = 0; k < 20; k++) {
+        for (k = 0; k < 100; k++) {
             for (i = 1; i <= N; i++) {
                 for (j = 1; j <= N; j++) {
                     if(so.ocs[i][j]!=so.E)continue;
